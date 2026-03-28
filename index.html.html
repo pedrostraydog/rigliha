@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rigliha — Le pro qu'il vous faut, là où vous êtes</title>
+  <meta name="description" content="Rigliha.com — Trouvez un artisan qualifié près de chez vous en quelques secondes." />
+  <meta property="og:url" content="https://rigliha.com" />
+  <meta property="og:title" content="Rigliha — Le pro qu'il vous faut, là où vous êtes" />
+  <meta property="og:description" content="Trouvez un artisan qualifié près de chez vous en quelques secondes." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --bg3: #18181f;
+      --bg4: #1e1e28;
+      --orange: #f5a623;
+      --red: #e8431a;
+      --green: #22c55e;
+      --gray: #6b7280;
+      --gray2: #374151;
+      --text: #f1f1f3;
+      --text2: #9ca3af;
+      --border: rgba(255,255,255,0.07);
+      --card: rgba(255,255,255,0.04);
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
+
+    /* ─── UTILITIES ─────────────────────────────── */
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .gap-8 { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .gap-16 { gap: 16px; }
+    .gap-20 { gap: 20px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 24px; border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 15px;
+      cursor: pointer; border: none; transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--orange), var(--red));
+      color: #fff;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(245,166,35,0.3); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text2);
+    }
+    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-sm { padding: 8px 16px; font-size: 13px; }
+    .btn-ghost { background: transparent; color: var(--text2); }
+    .btn-ghost:hover { color: var(--text); }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 99px;
+      font-size: 12px; font-weight: 600;
+    }
+    .badge-online { background: rgba(34,197,94,0.15); color: var(--green); }
+    .badge-offline { background: rgba(107,114,128,0.2); color: var(--gray); }
+
+    input, select, textarea {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 15px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--orange); }
+    input::placeholder, textarea::placeholder { color: var(--text2); }
+    select option { background: var(--bg3); }
+    label { font-size: 13px; color: var(--text2); font-weight: 500; margin-bottom: 6px; display: block; }
+    textarea { resize: vertical; min-height: 90px; }
+
+    /* ─── SPINNER ────────────────────────────────── */
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── TOAST ──────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--bg4); border: 1px solid var(--border);
+      padding: 12px 20px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 500;
+      opacity: 0; transition: all 0.3s; z-index: 9999;
+      pointer-events: none; max-width: 320px; text-align: center;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.success { border-color: rgba(34,197,94,0.4); color: var(--green); }
+    #toast.error { border-color: rgba(232,67,26,0.4); color: var(--red); }
+
+    /* ─── SCROLLBAR ──────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+    /* ═══════════════════════════════════════════════
+       LANDING PAGE
+    ═══════════════════════════════════════════════ */
+    #page-landing {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      position: relative; overflow: hidden;
+    }
+
+    .landing-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 30%, rgba(245,166,35,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 80% 70%, rgba(232,67,26,0.06) 0%, transparent 60%),
+        var(--bg);
+    }
+    .landing-grid {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(var(--border) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.4;
+    }
+
+    .landing-nav {
+      position: relative; z-index: 1;
+      padding: 24px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 26px;
+      background: linear-gradient(135deg, var(--orange), var(--red));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+
+    .landing-hero {
+      position: relative; z-index: 1;
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 24px 20px;
+      text-align: center;
+    }
+
+    .landing-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.2);
+      padding: 6px 16px; border-radius: 99px;
+      font-size: 13px; font-weight: 600; color: var(--orange);
+      margin-bottom: 24px;
+      animation: fadeInDown 0.6s ease;
+    }
+
+    .landing-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: clamp(40px, 7vw, 80px);
+      line-height: 1.05; letter-spacing: -2px;
+      margin-bottom: 20px;
+      animation: fadeInUp 0.7s ease 0.1s both;
+    }
+    .landing-title span {
+      background: linear-gradient(135deg, var(--orange), var(--red));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .landing-sub {
+      font-size: 18px; color: var(--text2);
+      max-width: 480px; line-height: 1.6;
+      margin-bottom: 52px;
+      animation: fadeInUp 0.7s ease 0.2s both;
+    }
+
+    .landing-cards {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 20px; max-width: 640px; width: 100%;
+      animation: fadeInUp 0.7s ease 0.3s both;
+    }
+
+    .landing-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative; overflow: hidden;
+    }
+    .landing-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(245,166,35,0.08), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .landing-card:hover { border-color: rgba(245,166,35,0.4); transform: translateY(-4px); }
+    .landing-card:hover::before { opacity: 1; }
+
+    .card-icon {
+      font-size: 40px; margin-bottom: 16px; display: block;
+    }
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 18px;
+      margin-bottom: 8px;
+    }
+    .card-desc { font-size: 14px; color: var(--text2); line-height: 1.5; }
+
+    .landing-footer {
+      position: relative; z-index: 1;
+      padding: 24px; text-align: center;
+      font-size: 13px; color: var(--gray);
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ═══════════════════════════════════════════════
+       AUTH PAGE
+    ═══════════════════════════════════════════════ */
+    #page-auth {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(ellipse 50% 60% at 50% 0%, rgba(245,166,35,0.07) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    .auth-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px 36px;
+      width: 100%; max-width: 440px;
+      animation: fadeInUp 0.4s ease;
+    }
+
+    .auth-logo { text-align: center; margin-bottom: 8px; }
+    .auth-sub-title { text-align: center; font-size: 14px; color: var(--text2); margin-bottom: 28px; }
+
+    .auth-tabs {
+      display: flex; gap: 4px;
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      margin-bottom: 28px;
+    }
+    .auth-tab {
+      flex: 1; padding: 10px; border-radius: 6px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+      background: transparent; border: none; color: var(--text2);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .auth-tab.active { background: var(--bg4); color: var(--text); }
+
+    .auth-form { display: flex; flex-direction: column; gap: 16px; }
+
+    .role-selector {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .role-option {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 12px;
+      cursor: pointer; transition: all 0.2s;
+      text-align: center;
+    }
+    .role-option:hover { border-color: rgba(245,166,35,0.4); }
+    .role-option.selected { border-color: var(--orange); background: rgba(245,166,35,0.08); }
+    .role-option .role-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+    .role-option .role-label { font-size: 13px; font-weight: 600; }
+    .role-option .role-sub { font-size: 11px; color: var(--text2); }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+    .auth-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--text2); font-size: 14px; cursor: pointer;
+      margin-bottom: 24px; background: none; border: none;
+    }
+    .auth-back:hover { color: var(--text); }
+
+    /* ═══════════════════════════════════════════════
+       COMMON DASHBOARD LAYOUT
+    ═══════════════════════════════════════════════ */
+    .dash-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+
+    .user-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 99px; padding: 6px 12px 6px 6px;
+    }
+    .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--orange), var(--red));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff;
+    }
+    .user-name { font-size: 13px; font-weight: 500; }
+
+    /* ═══════════════════════════════════════════════
+       CLIENT DASHBOARD
+    ═══════════════════════════════════════════════ */
+    #page-client { min-height: 100vh; }
+
+    .client-body { padding: 20px; }
+
+    .location-bar {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 16px;
+      margin-bottom: 20px;
+      font-size: 14px; color: var(--text2);
+    }
+    .location-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.3);
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px; font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .trade-pills {
+      display: flex; gap: 8px;
+      overflow-x: auto; padding-bottom: 4px;
+      margin-bottom: 20px;
+      scrollbar-width: none;
+    }
+    .trade-pills::-webkit-scrollbar { display: none; }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      font-size: 13px; font-weight: 500; color: var(--text2);
+      cursor: pointer; white-space: nowrap; transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .pill:hover { border-color: rgba(245,166,35,0.4); color: var(--text); }
+    .pill.active {
+      background: rgba(245,166,35,0.12);
+      border-color: var(--orange); color: var(--orange);
+    }
+
+    /* MAP */
+    #map-container {
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      position: relative;
+    }
+    #map { height: 340px; width: 100%; background: var(--bg3); }
+
+    .map-overlay-loading {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg3); z-index: 1000;
+    }
+
+    /* WORKER CARDS */
+    .workers-grid {
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    .worker-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex; align-items: center; gap: 14px;
+      cursor: pointer; transition: all 0.25s;
+    }
+    .worker-card:hover { border-color: rgba(245,166,35,0.35); transform: translateX(3px); }
+
+    .worker-photo {
+      width: 56px; height: 56px; border-radius: 12px;
+      object-fit: cover; flex-shrink: 0;
+      background: var(--bg3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+
+    .worker-info { flex: 1; min-width: 0; }
+    .worker-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 15px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .worker-trade { font-size: 13px; color: var(--text2); margin: 2px 0; }
+    .worker-meta {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 6px;
+    }
+    .worker-rating { font-size: 13px; color: var(--orange); font-weight: 600; }
+    .worker-dist { font-size: 12px; color: var(--text2); }
+    .worker-price { font-size: 12px; color: var(--text2); }
+
+    .worker-contact-btn {
+      flex-shrink: 0;
+    }
+
+    .stars { color: var(--orange); letter-spacing: 1px; font-size: 13px; }
+
+    .empty-state {
+      text-align: center; padding: 48px 24px;
+      color: var(--text2); font-size: 15px;
+    }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+    /* ═══════════════════════════════════════════════
+       WORKER DASHBOARD
+    ═══════════════════════════════════════════════ */
+    #page-worker { min-height: 100vh; }
+
+    .worker-body { padding: 20px; max-width: 600px; margin: 0 auto; }
+
+    /* Toggle */
+    .online-toggle-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      margin-bottom: 20px;
+      transition: all 0.4s;
+    }
+    .online-toggle-card.online {
+      border-color: rgba(34,197,94,0.4);
+      background: rgba(34,197,94,0.05);
+    }
+
+    .toggle-label {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 20px;
+      margin-bottom: 6px;
+    }
+    .toggle-sub { font-size: 14px; color: var(--text2); margin-bottom: 20px; }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 72px; height: 36px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      cursor: pointer; transition: all 0.3s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute; left: 4px; top: 50%;
+      transform: translateY(-50%);
+      width: 26px; height: 26px;
+      background: var(--gray);
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+    input:checked + .toggle-slider { background: rgba(34,197,94,0.2); border-color: var(--green); }
+    input:checked + .toggle-slider::before { transform: translateX(36px) translateY(-50%); background: var(--green); box-shadow: 0 0 12px rgba(34,197,94,0.5); }
+
+    /* Stats */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 12px; margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 16px;
+      text-align: center;
+    }
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 24px;
+      color: var(--orange); margin-bottom: 4px;
+    }
+    .stat-label { font-size: 12px; color: var(--text2); }
+
+    /* Profile edit */
+    .profile-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px;
+      margin-bottom: 20px;
+    }
+    .profile-card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px; font-weight: 700;
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Requests */
+    .request-item {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 10px;
+    }
+    .req-icon { font-size: 20px; }
+    .req-info { flex: 1; }
+    .req-name { font-weight: 600; font-size: 14px; }
+    .req-time { font-size: 12px; color: var(--text2); }
+    .req-badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+    .req-pending { background: rgba(245,166,35,0.15); color: var(--orange); }
+    .req-done { background: rgba(34,197,94,0.15); color: var(--green); }
+
+    /* ═══════════════════════════════════════════════
+       MODAL
+    ═══════════════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 0;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 24px 24px 0 0;
+      padding: 28px 24px 32px;
+      width: 100%; max-width: 480px;
+      max-height: 90vh; overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-handle {
+      width: 40px; height: 4px;
+      background: var(--border); border-radius: 2px;
+      margin: 0 auto 24px;
+    }
+    .modal-close {
+      position: absolute; top: 20px; right: 20px;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text2); border-radius: 50%;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; cursor: pointer;
+    }
+
+    .modal-worker-header {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 20px;
+    }
+    .modal-worker-photo {
+      width: 72px; height: 72px; border-radius: 16px;
+      font-size: 36px; display: flex; align-items: center; justify-content: center;
+      background: var(--bg3); flex-shrink: 0;
+    }
+    .modal-worker-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 22px; line-height: 1.1;
+    }
+    .modal-worker-trade { color: var(--text2); font-size: 14px; margin: 4px 0; }
+    .modal-worker-rating { color: var(--orange); font-size: 14px; font-weight: 600; }
+
+    .modal-details {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin: 20px 0;
+    }
+    .detail-chip {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px 14px;
+    }
+    .detail-chip-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+    .detail-chip-value { font-size: 15px; font-weight: 600; }
+
+    .modal-bio {
+      font-size: 14px; color: var(--text2); line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .rating-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .rating-form-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+
+    .star-input { display: flex; gap: 6px; margin-bottom: 12px; }
+    .star-btn {
+      font-size: 28px; background: none; border: none;
+      cursor: pointer; color: var(--gray2);
+      transition: all 0.15s; line-height: 1;
+    }
+    .star-btn.active, .star-btn:hover { color: var(--orange); transform: scale(1.1); }
+
+    /* Leaflet overrides */
+    .leaflet-container { background: #1a1a24; }
+    .leaflet-popup-content-wrapper {
+      background: var(--bg2) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+    }
+    .leaflet-popup-tip { background: var(--bg2) !important; }
+    .leaflet-popup-content { font-family: 'DM Sans', sans-serif !important; }
+    .leaflet-control-zoom a {
+      background: var(--bg2) !important; color: var(--text) !important;
+      border-color: var(--border) !important;
+    }
+    .leaflet-control-zoom a:hover { background: var(--bg3) !important; }
+    .leaflet-tile { filter: brightness(0.8) hue-rotate(200deg) saturate(0.6); }
+
+    /* Custom pulse marker */
+    .pulse-ring {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 0 rgba(245,166,35,0.5);
+      animation: pulse-anim 1.8s infinite;
+    }
+    @keyframes pulse-anim {
+      0% { box-shadow: 0 0 0 0 rgba(245,166,35,0.5); }
+      70% { box-shadow: 0 0 0 14px rgba(245,166,35,0); }
+      100% { box-shadow: 0 0 0 0 rgba(245,166,35,0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .landing-cards { grid-template-columns: 1fr; max-width: 320px; }
+      .auth-box { padding: 28px 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .modal { border-radius: 20px 20px 0 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════ TOAST ══ -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     PAGE: LANDING
+════════════════════════════════════════════════════════ -->
+<div id="page-landing">
+  <div class="landing-bg"></div>
+  <div class="landing-grid"></div>
+
+  <nav class="landing-nav">
+    <span class="logo">Rigliha</span>
+    <button class="btn btn-outline btn-sm" onclick="showPage('auth')">Se connecter</button>
+  </nav>
+
+  <div class="landing-hero">
+    <div class="landing-eyebrow">
+      <span>🇩🇿</span> Artisans qualifiés en Algérie
+    </div>
+    <h1 class="landing-title">Le pro qu'il vous faut,<br><span>là où vous êtes</span></h1>
+    <p class="landing-sub">Trouvez un artisan qualifié près de chez vous en quelques secondes. Plombier, électricien, peintre… disponible maintenant.</p>
+
+    <div class="landing-cards">
+      <div class="landing-card" onclick="startAsClient()">
+        <span class="card-icon">🔍</span>
+        <div class="card-title">Je cherche un artisan</div>
+        <p class="card-desc">Trouvez le bon professionnel près de vous</p>
+      </div>
+      <div class="landing-card" onclick="startAsWorker()">
+        <span class="card-icon">🔧</span>
+        <div class="card-title">Je suis artisan</div>
+        <p class="card-desc">Trouvez des clients dans votre zone</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="landing-footer">
+    © 2024 rigliha.com · Tous droits réservés
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PAGE: AUTH
+════════════════════════════════════════════════════════ -->
+<div id="page-auth" class="hidden">
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background: radial-gradient(ellipse 50% 60% at 50% 0%, rgba(245,166,35,0.07) 0%, transparent 60%), var(--bg);">
+    <div class="auth-box">
+      <button class="auth-back" onclick="showPage('landing')">← Retour</button>
+      <div class="auth-logo"><span class="logo">Rigliha</span></div>
+      <p class="auth-sub-title">Connectez-vous ou créez votre compte</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login', this)">Connexion</button>
+        <button class="auth-tab" onclick="switchAuthTab('register', this)">Inscription</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="auth-login" class="auth-form">
+        <div>
+          <label>Adresse email</label>
+          <input type="email" id="login-email" placeholder="votre@email.com" />
+        </div>
+        <div>
+          <label>Mot de passe</label>
+          <input type="password" id="login-password" placeholder="••••••••" />
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">Se connecter</button>
+        <p style="text-align:center;font-size:13px;color:var(--text2)">
+          Pas encore de compte ? <span style="color:var(--orange);cursor:pointer" onclick="switchAuthTabByName('register')">S'inscrire</span>
+        </p>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="auth-register" class="auth-form hidden">
+        <div>
+          <label>Vous êtes ?</label>
+          <div class="role-selector">
+            <div class="role-option selected" id="role-client" onclick="selectRole('client')">
+              <span class="role-icon">👤</span>
+              <div class="role-label">Client</div>
+              <div class="role-sub">Je cherche un artisan</div>
+            </div>
+            <div class="role-option" id="role-worker" onclick="selectRole('worker')">
+              <span class="role-icon">🔧</span>
+              <div class="role-label">Artisan</div>
+              <div class="role-sub">Je propose mes services</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label>Nom complet</label>
+          <input type="text" id="reg-name" placeholder="Mohammed Benali" />
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" id="reg-email" placeholder="votre@email.com" />
+        </div>
+        <div>
+          <label>Mot de passe</label>
+          <input type="password" id="reg-password" placeholder="Minimum 6 caractères" />
+        </div>
+
+        <!-- Worker extra fields -->
+        <div id="worker-fields" class="hidden">
+          <hr class="divider" />
+          <div>
+            <label>Métier</label>
+            <select id="reg-trade">
+              <option value="">Choisir votre métier…</option>
+              <option value="plombier">🔧 Plombier</option>
+              <option value="electricien">⚡ Électricien</option>
+              <option value="macon">🧱 Maçon</option>
+              <option value="peintre">🎨 Peintre</option>
+              <option value="menuisier">🪚 Menuisier</option>
+              <option value="serrurier">🔐 Serrurier</option>
+              <option value="couvreur">🏠 Couvreur</option>
+              <option value="carreleur">🪣 Carreleur</option>
+              <option value="soudeur">🔩 Soudeur</option>
+              <option value="cvc">❄️ Climatisation / CVC</option>
+            </select>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <div>
+              <label>Expérience (ans)</label>
+              <input type="number" id="reg-experience" placeholder="5" min="0" max="50" />
+            </div>
+            <div>
+              <label>Tarif (DA/h)</label>
+              <input type="number" id="reg-price" placeholder="1500" />
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doRegister()">Créer mon compte</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PAGE: CLIENT DASHBOARD
+════════════════════════════════════════════════════════ -->
+<div id="page-client" class="hidden">
+  <header class="dash-header">
+    <span class="logo" style="font-size:22px">Rigliha</span>
+    <div class="header-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="client-avatar-letter"></div>
+        <span class="user-name" id="client-user-name"></span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Déconnecter</button>
+    </div>
+  </header>
+
+  <div class="client-body">
+    <!-- Location bar -->
+    <div class="location-bar">
+      <div class="location-dot"></div>
+      <span id="client-location-text">Localisation en cours…</span>
+    </div>
+
+    <!-- Trade pills -->
+    <p class="section-title">Quel artisan cherchez-vous ?</p>
+    <div class="trade-pills" id="trade-pills">
+      <div class="pill active" data-trade="all" onclick="filterTrade('all', this)">🗺️ Tous</div>
+      <div class="pill" data-trade="plombier" onclick="filterTrade('plombier', this)">🔧 Plombier</div>
+      <div class="pill" data-trade="electricien" onclick="filterTrade('electricien', this)">⚡ Électricien</div>
+      <div class="pill" data-trade="macon" onclick="filterTrade('macon', this)">🧱 Maçon</div>
+      <div class="pill" data-trade="peintre" onclick="filterTrade('peintre', this)">🎨 Peintre</div>
+      <div class="pill" data-trade="menuisier" onclick="filterTrade('menuisier', this)">🪚 Menuisier</div>
+      <div class="pill" data-trade="serrurier" onclick="filterTrade('serrurier', this)">🔐 Serrurier</div>
+      <div class="pill" data-trade="couvreur" onclick="filterTrade('couvreur', this)">🏠 Couvreur</div>
+      <div class="pill" data-trade="carreleur" onclick="filterTrade('carreleur', this)">🪣 Carreleur</div>
+      <div class="pill" data-trade="soudeur" onclick="filterTrade('soudeur', this)">🔩 Soudeur</div>
+      <div class="pill" data-trade="cvc" onclick="filterTrade('cvc', this)">❄️ CVC</div>
+    </div>
+
+    <!-- Map -->
+    <div id="map-container">
+      <div class="map-overlay-loading" id="map-loading">
+        <div class="flex flex-col items-center gap-12">
+          <div class="spinner"></div>
+          <span style="font-size:14px;color:var(--text2)">Chargement de la carte…</span>
+        </div>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <!-- Workers list -->
+    <p class="section-title">Artisans disponibles <span id="workers-count" style="color:var(--orange)"></span></p>
+    <div id="workers-list" class="workers-grid">
+      <div style="text-align:center;padding:40px 0">
+        <div class="spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PAGE: WORKER DASHBOARD
+════════════════════════════════════════════════════════ -->
+<div id="page-worker" class="hidden">
+  <header class="dash-header">
+    <span class="logo" style="font-size:22px">Rigliha</span>
+    <div class="header-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="worker-avatar-letter"></div>
+        <span class="user-name" id="worker-user-name"></span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Déconnecter</button>
+    </div>
+  </header>
+
+  <div class="worker-body">
+    <!-- Online toggle -->
+    <div class="online-toggle-card" id="toggle-card">
+      <div class="toggle-label" id="toggle-label">HORS LIGNE</div>
+      <p class="toggle-sub" id="toggle-sub">Activez pour être visible par les clients</p>
+      <label class="toggle-switch">
+        <input type="checkbox" id="online-toggle" onchange="toggleOnlineStatus()" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="w-rating">4.9</div>
+        <div class="stat-label">⭐ Note</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="w-reviews">47</div>
+        <div class="stat-label">Avis clients</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="w-jobs">62</div>
+        <div class="stat-label">Jobs réalisés</div>
+      </div>
+    </div>
+
+    <!-- Profile -->
+    <div class="profile-card">
+      <div class="profile-card-title">👤 Mon profil</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-row">
+          <div>
+            <label>Nom</label>
+            <input type="text" id="w-name" placeholder="Votre nom" />
+          </div>
+          <div>
+            <label>Métier</label>
+            <select id="w-trade">
+              <option value="plombier">🔧 Plombier</option>
+              <option value="electricien">⚡ Électricien</option>
+              <option value="macon">🧱 Maçon</option>
+              <option value="peintre">🎨 Peintre</option>
+              <option value="menuisier">🪚 Menuisier</option>
+              <option value="serrurier">🔐 Serrurier</option>
+              <option value="couvreur">🏠 Couvreur</option>
+              <option value="carreleur">🪣 Carreleur</option>
+              <option value="soudeur">🔩 Soudeur</option>
+              <option value="cvc">❄️ CVC</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Expérience (ans)</label>
+            <input type="number" id="w-exp" placeholder="5" />
+          </div>
+          <div>
+            <label>Tarif (DA/h)</label>
+            <input type="number" id="w-price" placeholder="2000" />
+          </div>
+        </div>
+        <div>
+          <label>Zone d'intervention (km)</label>
+          <input type="number" id="w-radius" placeholder="10" />
+        </div>
+        <div>
+          <label>Bio / Description</label>
+          <textarea id="w-bio" placeholder="Décrivez votre expérience, vos spécialités…"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveWorkerProfile()">💾 Enregistrer le profil</button>
+      </div>
+    </div>
+
+    <!-- Recent requests -->
+    <div class="profile-card">
+      <div class="profile-card-title">📋 Demandes récentes</div>
+      <div id="worker-requests">
+        <div class="request-item">
+          <div class="req-icon">👤</div>
+          <div class="req-info">
+            <div class="req-name">Ahmed Taleb</div>
+            <div class="req-time">Il y a 2 heures · Alger-Centre</div>
+          </div>
+          <span class="req-badge req-pending">En attente</span>
+        </div>
+        <div class="request-item">
+          <div class="req-icon">👤</div>
+          <div class="req-info">
+            <div class="req-name">Leila Mansouri</div>
+            <div class="req-time">Hier · El Biar</div>
+          </div>
+          <span class="req-badge req-done">Terminé</span>
+        </div>
+        <div class="request-item">
+          <div class="req-icon">👤</div>
+          <div class="req-info">
+            <div class="req-name">Omar Khaled</div>
+            <div class="req-time">Il y a 3 jours · Bab El Oued</div>
+          </div>
+          <span class="req-badge req-done">Terminé</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Earnings -->
+    <div class="profile-card" style="text-align:center">
+      <div class="profile-card-title" style="justify-content:center">💰 Gains ce mois</div>
+      <div style="font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--orange);margin:8px 0">
+        62 400 <span style="font-size:20px;color:var(--text2)">DA</span>
+      </div>
+      <p style="font-size:13px;color:var(--text2)">Basé sur vos jobs terminés</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL: WORKER PROFILE
+════════════════════════════════════════════════════════ -->
+<div id="worker-modal" class="modal-overlay hidden" onclick="closeModalIfOutside(event)">
+  <div class="modal" style="position:relative">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+
+    <div class="modal-worker-header">
+      <div class="modal-worker-photo" id="modal-photo"></div>
+      <div>
+        <div class="modal-worker-name" id="modal-name"></div>
+        <div class="modal-worker-trade" id="modal-trade"></div>
+        <div class="modal-worker-rating" id="modal-rating"></div>
+        <div id="modal-status" style="margin-top:4px"></div>
+      </div>
+    </div>
+
+    <div class="modal-details">
+      <div class="detail-chip">
+        <div class="detail-chip-label">💼 Expérience</div>
+        <div class="detail-chip-value" id="modal-exp"></div>
+      </div>
+      <div class="detail-chip">
+        <div class="detail-chip-label">💰 Tarif</div>
+        <div class="detail-chip-value" id="modal-price"></div>
+      </div>
+      <div class="detail-chip">
+        <div class="detail-chip-label">📍 Distance</div>
+        <div class="detail-chip-value" id="modal-dist"></div>
+      </div>
+      <div class="detail-chip">
+        <div class="detail-chip-label">🗺️ Zone</div>
+        <div class="detail-chip-value" id="modal-zone"></div>
+      </div>
+    </div>
+
+    <p class="modal-bio" id="modal-bio"></p>
+
+    <button class="btn btn-primary" style="width:100%" onclick="contactWorker()">
+      📞 Contacter cet artisan
+    </button>
+
+    <!-- Rating form -->
+    <div class="rating-form">
+      <div class="rating-form-title">⭐ Laisser un avis</div>
+      <div class="star-input" id="star-input">
+        <button class="star-btn" data-val="1" onclick="setStar(1)">☆</button>
+        <button class="star-btn" data-val="2" onclick="setStar(2)">☆</button>
+        <button class="star-btn" data-val="3" onclick="setStar(3)">☆</button>
+        <button class="star-btn" data-val="4" onclick="setStar(4)">☆</button>
+        <button class="star-btn" data-val="5" onclick="setStar(5)">☆</button>
+      </div>
+      <textarea id="review-comment" placeholder="Partagez votre expérience avec cet artisan…" style="margin-bottom:12px"></textarea>
+      <button class="btn btn-outline" style="width:100%" onclick="submitReview()">Envoyer mon avis</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════════ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ─── APP STATE ────────────────────────────────────────
+const APP = {
+  currentUser: null,    // { id, name, email, role }
+  selectedRole: 'client',
+  authTab: 'login',
+  map: null,
+  markers: [],
+  userMarker: null,
+  userLat: 36.7372,
+  userLng: 3.0865,
+  currentTrade: 'all',
+  selectedWorker: null,
+  selectedStar: 0,
+  workerOnline: false,
+};
+
+// ─── DEMO DATA ────────────────────────────────────────
+const DEMO_WORKERS = [
+  {
+    id: 'w1', name: 'Mohammed Aïssaoui', trade: 'plombier', tradeLabel: '🔧 Plombier',
+    experience: 12, pricePerHour: 2000, isOnline: true,
+    lat: 36.7520, lng: 3.0420, city: 'El Biar', serviceRadius: 15,
+    rating: 4.8, reviewCount: 127,
+    bio: 'Plombier professionnel avec 12 ans d'expérience. Spécialisé en installations sanitaires, fuites d'eau et dépannage urgent. Disponible 7j/7.',
+  },
+  {
+    id: 'w2', name: 'Karim Bensaid', trade: 'electricien', tradeLabel: '⚡ Électricien',
+    experience: 8, pricePerHour: 2500, isOnline: true,
+    lat: 36.7200, lng: 3.1100, city: 'Hussein Dey', serviceRadius: 20,
+    rating: 4.9, reviewCount: 89,
+    bio: 'Électricien certifié, spécialiste en installations résidentielles et commerciales. Dépannage rapide garanti.',
+  },
+  {
+    id: 'w3', name: 'Youcef Hamidou', trade: 'macon', tradeLabel: '🧱 Maçon',
+    experience: 20, pricePerHour: 1800, isOnline: false,
+    lat: 36.7600, lng: 3.0600, city: 'Bab Ezzouar', serviceRadius: 25,
+    rating: 4.6, reviewCount: 203,
+    bio: 'Maçon expérimenté en gros œuvre, rénovation et finition. Je réalise vos projets dans les délais.',
+  },
+  {
+    id: 'w4', name: 'Amine Khelifi', trade: 'peintre', tradeLabel: '🎨 Peintre',
+    experience: 6, pricePerHour: 1500, isOnline: true,
+    lat: 36.7300, lng: 3.0750, city: 'Alger-Centre', serviceRadius: 12,
+    rating: 4.7, reviewCount: 54,
+    bio: 'Peintre en bâtiment, enduits décoratifs, peinture intérieure et extérieure. Travail soigné et propre.',
+  },
+  {
+    id: 'w5', name: 'Sara Benali', trade: 'carreleur', tradeLabel: '🪣 Carreleur',
+    experience: 9, pricePerHour: 2200, isOnline: true,
+    lat: 36.7450, lng: 3.0950, city: 'Kouba', serviceRadius: 18,
+    rating: 5.0, reviewCount: 38,
+    bio: 'Carrelage et faïence, cuisine, salle de bain. Pose au millimètre. Artisane passionnée par le beau travail.',
+  },
+  {
+    id: 'w6', name: 'Nabil Ouali', trade: 'serrurier', tradeLabel: '🔐 Serrurier',
+    experience: 15, pricePerHour: 3000, isOnline: false,
+    lat: 36.7100, lng: 3.0500, city: 'Bir Mourad Raïs', serviceRadius: 30,
+    rating: 4.5, reviewCount: 176,
+    bio: 'Serrurier d'urgence disponible 24h/24. Ouverture de portes, installation de serrures haute sécurité.',
+  },
+  {
+    id: 'w7', name: 'Fatima Zahra Mekki', trade: 'cvc', tradeLabel: '❄️ Climatisation / CVC',
+    experience: 7, pricePerHour: 2800, isOnline: true,
+    lat: 36.7650, lng: 3.1200, city: 'Rouiba', serviceRadius: 22,
+    rating: 4.8, reviewCount: 61,
+    bio: 'Technicienne CVC spécialisée en installation, maintenance et dépannage de climatiseurs toutes marques.',
+  },
+  {
+    id: 'w8', name: 'Rachid Tlemçani', trade: 'menuisier', tradeLabel: '🪚 Menuisier',
+    experience: 18, pricePerHour: 2300, isOnline: true,
+    lat: 36.7380, lng: 3.0300, city: 'Hydra', serviceRadius: 20,
+    rating: 3.9, reviewCount: 92,
+    bio: 'Menuisier ébéniste, fabrication sur mesure, rénovation de meubles, pose de parquet et placards.',
+  },
+];
+
+const TRADE_EMOJIS = {
+  plombier: '🔧', electricien: '⚡', macon: '🧱', peintre: '🎨',
+  menuisier: '🪚', serrurier: '🔐', couvreur: '🏠', carreleur: '🪣',
+  soudeur: '🔩', cvc: '❄️'
+};
+
+// ─── PAGES ────────────────────────────────────────────
+function showPage(pageId) {
+  document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
+  document.getElementById('page-' + pageId).classList.remove('hidden');
+}
+
+// ─── LANDING ──────────────────────────────────────────
+function startAsClient() {
+  APP.selectedRole = 'client';
+  selectRole('client');
+  switchAuthTabByName('register');
+  showPage('auth');
+}
+function startAsWorker() {
+  APP.selectedRole = 'worker';
+  selectRole('worker');
+  switchAuthTabByName('register');
+  showPage('auth');
+}
+
+// ─── AUTH TABS ────────────────────────────────────────
+function switchAuthTab(tab, el) {
+  APP.authTab = tab;
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('auth-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('auth-register').classList.toggle('hidden', tab !== 'register');
+}
+function switchAuthTabByName(tab) {
+  const tabs = document.querySelectorAll('.auth-tab');
+  tabs.forEach(t => {
+    const isTarget = (tab === 'login' && t.textContent.includes('Connexion')) ||
+                     (tab === 'register' && t.textContent.includes('Inscription'));
+    if (isTarget) switchAuthTab(tab, t);
+  });
+}
+
+function selectRole(role) {
+  APP.selectedRole = role;
+  document.getElementById('role-client').classList.toggle('selected', role === 'client');
+  document.getElementById('role-worker').classList.toggle('selected', role === 'worker');
+  document.getElementById('worker-fields').classList.toggle('hidden', role !== 'worker');
+}
+
+// ─── AUTH LOGIC (Demo — no Firebase) ──────────────────
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-password').value;
+
+  if (!email || !pass) { toast('Veuillez remplir tous les champs', 'error'); return; }
+
+  // Check demo accounts
+  const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
+  const user = stored.find(u => u.email === email && u.password === pass);
+
+  if (!user) { toast('Email ou mot de passe incorrect', 'error'); return; }
+
+  APP.currentUser = user;
+  localStorage.setItem('rigliha_session', JSON.stringify(user));
+  toast('Bienvenue ' + user.name + ' !', 'success');
+  goToDashboard(user);
+}
+
+function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-password').value;
+  const role = APP.selectedRole;
+
+  if (!name || !email || !pass) { toast('Veuillez remplir tous les champs', 'error'); return; }
+  if (pass.length < 6) { toast('Mot de passe trop court (min. 6 caractères)', 'error'); return; }
+
+  const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
+  if (stored.find(u => u.email === email)) { toast('Cet email est déjà utilisé', 'error'); return; }
+
+  const newUser = {
+    id: 'u' + Date.now(), name, email, password: pass, role,
+  };
+
+  if (role === 'worker') {
+    const trade = document.getElementById('reg-trade').value;
+    const exp = document.getElementById('reg-experience').value;
+    const price = document.getElementById('reg-price').value;
+    if (!trade) { toast('Veuillez choisir votre métier', 'error'); return; }
+    newUser.trade = trade;
+    newUser.experience = parseInt(exp) || 1;
+    newUser.pricePerHour = parseInt(price) || 2000;
+    newUser.rating = 0; newUser.reviewCount = 0;
+    newUser.isOnline = false;
+    newUser.bio = '';
+    newUser.lat = 36.7372 + (Math.random()-0.5)*0.05;
+    newUser.lng = 3.0865 + (Math.random()-0.5)*0.05;
+  }
+
+  stored.push(newUser);
+  localStorage.setItem('rigliha_users', JSON.stringify(stored));
+  APP.currentUser = newUser;
+  localStorage.setItem('rigliha_session', JSON.stringify(newUser));
+  toast('Compte créé avec succès !', 'success');
+  goToDashboard(newUser);
+}
+
+function goToDashboard(user) {
+  if (user.role === 'client') {
+    initClientDashboard(user);
+    showPage('client');
+  } else {
+    initWorkerDashboard(user);
+    showPage('worker');
+  }
+}
+
+function doLogout() {
+  APP.currentUser = null;
+  localStorage.removeItem('rigliha_session');
+  if (APP.map) { APP.map.remove(); APP.map = null; }
+  showPage('landing');
+  toast('Déconnecté avec succès');
+}
+
+// ─── CLIENT DASHBOARD ─────────────────────────────────
+function initClientDashboard(user) {
+  document.getElementById('client-user-name').textContent = user.name.split(' ')[0];
+  document.getElementById('client-avatar-letter').textContent = user.name[0].toUpperCase();
+
+  getUserLocation().then(({ lat, lng }) => {
+    APP.userLat = lat; APP.userLng = lng;
+    initMap(lat, lng);
+    updateLocationText(lat, lng);
+  });
+}
+
+function getUserLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve({ lat: 36.7372, lng: 3.0865 });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve({ lat: 36.7372, lng: 3.0865 }),
+      { timeout: 5000 }
+    );
+  });
+}
+
+function updateLocationText(lat, lng) {
+  // Reverse geocode approximation based on coords near Algiers
+  const neighborhoods = [
+    { name: 'Alger-Centre', lat: 36.7538, lng: 3.0588 },
+    { name: 'El Biar', lat: 36.7639, lng: 3.0278 },
+    { name: 'Hydra', lat: 36.7383, lng: 3.0227 },
+    { name: 'Kouba', lat: 36.7197, lng: 3.0936 },
+    { name: 'Hussein Dey', lat: 36.7376, lng: 3.1036 },
+    { name: 'Bab El Oued', lat: 36.7801, lng: 3.0565 },
+  ];
+  let closest = 'Alger', minD = Infinity;
+  neighborhoods.forEach(n => {
+    const d = Math.abs(n.lat - lat) + Math.abs(n.lng - lng);
+    if (d < minD) { minD = d; closest = n.name; }
+  });
+  document.getElementById('client-location-text').textContent = '📍 ' + closest + ', Algérie';
+}
+
+// ─── MAP ──────────────────────────────────────────────
+function initMap(lat, lng) {
+  if (APP.map) APP.map.remove();
+
+  APP.map = L.map('map', { zoomControl: true, attributionControl: false }).setView([lat, lng], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+  }).addTo(APP.map);
+
+  // User marker (orange pulsing)
+  const userIcon = L.divIcon({
+    className: '',
+    html: '<div class="pulse-ring" style="width:16px;height:16px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 0 rgba(245,166,35,0.5);animation:pulse-anim 1.8s infinite;"></div>',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+
+  APP.userMarker = L.marker([lat, lng], { icon: userIcon })
+    .addTo(APP.map)
+    .bindPopup('<strong>📍 Votre position</strong>');
+
+  document.getElementById('map-loading').classList.add('hidden');
+
+  renderWorkers();
+}
+
+function getFilteredWorkers() {
+  let workers = [...DEMO_WORKERS];
+  if (APP.currentTrade !== 'all') {
+    workers = workers.filter(w => w.trade === APP.currentTrade);
+  }
+  return workers;
+}
+
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function renderWorkers() {
+  // Clear old markers (not user marker)
+  APP.markers.forEach(m => m.remove());
+  APP.markers = [];
+
+  const workers = getFilteredWorkers().map(w => ({
+    ...w, dist: calcDistance(APP.userLat, APP.userLng, w.lat, w.lng)
+  })).sort((a,b) => a.dist - b.dist);
+
+  // Add map pins
+  workers.forEach(w => {
+    const color = w.isOnline ? '#22c55e' : '#6b7280';
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+        background:${color};border:2px solid rgba(0,0,0,0.3);
+        display:flex;align-items:center;justify-content:center;
+        box-shadow:0 3px 10px rgba(0,0,0,0.4);">
+        <span style="transform:rotate(45deg);font-size:14px">${TRADE_EMOJIS[w.trade]||'🔧'}</span>
+      </div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 36],
+    });
+
+    const starsHtml = renderStars(w.rating);
+    const popup = L.popup({ className: 'rigliha-popup' }).setContent(`
+      <div style="font-family:'DM Sans',sans-serif;padding:4px;min-width:180px">
+        <strong style="font-family:'Syne',sans-serif;font-size:15px">${w.name}</strong>
+        <div style="font-size:13px;color:#9ca3af;margin:4px 0">${w.tradeLabel}</div>
+        <div style="font-size:13px;color:#f5a623">${starsHtml} ${w.rating} · ${w.reviewCount} avis</div>
+        <div style="font-size:12px;color:#9ca3af;margin:4px 0">${w.dist.toFixed(1)} km · ${w.pricePerHour.toLocaleString()} DA/h</div>
+        <button onclick="openWorkerModal('${w.id}')" style="
+          margin-top:8px;width:100%;padding:7px;
+          background:linear-gradient(135deg,#f5a623,#e8431a);
+          border:none;border-radius:6px;color:#fff;
+          font-weight:600;font-size:13px;cursor:pointer">
+          Voir profil
+        </button>
+      </div>
+    `);
+
+    const marker = L.marker([w.lat, w.lng], { icon }).addTo(APP.map).bindPopup(popup);
+    APP.markers.push(marker);
+  });
+
+  // Render list
+  const list = document.getElementById('workers-list');
+  const count = document.getElementById('workers-count');
+
+  if (workers.length === 0) {
+    count.textContent = '';
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p>Aucun artisan trouvé pour ce métier</p></div>`;
+    return;
+  }
+
+  count.textContent = '(' + workers.length + ')';
+  list.innerHTML = workers.map(w => `
+    <div class="worker-card" onclick="openWorkerModal('${w.id}')">
+      <div class="worker-photo">${TRADE_EMOJIS[w.trade]||'🔧'}</div>
+      <div class="worker-info">
+        <div class="worker-name">${w.name}</div>
+        <div class="worker-trade">${w.tradeLabel}</div>
+        <div class="worker-meta">
+          <span class="worker-rating">${renderStars(w.rating)} ${w.rating}</span>
+          <span class="worker-dist">· ${w.reviewCount} avis</span>
+          <span class="worker-dist">· ${w.dist.toFixed(1)} km</span>
+        </div>
+        <div class="worker-price">${w.pricePerHour.toLocaleString()} DA/h · ${w.city}</div>
+      </div>
+      <div class="worker-contact-btn">
+        <span class="${w.isOnline ? 'badge badge-online' : 'badge badge-offline'}">
+          ${w.isOnline ? '● Dispo' : '● Indispo'}
+        </span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterTrade(trade, el) {
+  APP.currentTrade = trade;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderWorkers();
+}
+
+function renderStars(rating) {
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
+  let s = '';
+  for (let i = 0; i < full; i++) s += '★';
+  if (half) s += '½';
+  for (let i = full + (half?1:0); i < 5; i++) s += '☆';
+  return s;
+}
+
+// ─── WORKER MODAL ─────────────────────────────────────
+function openWorkerModal(workerId) {
+  const w = DEMO_WORKERS.find(w => w.id === workerId);
+  if (!w) return;
+  APP.selectedWorker = w;
+  APP.selectedStar = 0;
+
+  const dist = calcDistance(APP.userLat, APP.userLng, w.lat, w.lng);
+
+  document.getElementById('modal-photo').textContent = TRADE_EMOJIS[w.trade] || '🔧';
+  document.getElementById('modal-name').textContent = w.name;
+  document.getElementById('modal-trade').textContent = w.tradeLabel;
+  document.getElementById('modal-rating').textContent = renderStars(w.rating) + ' ' + w.rating + ' · ' + w.reviewCount + ' avis';
+  document.getElementById('modal-status').innerHTML = w.isOnline
+    ? '<span class="badge badge-online">● En ligne</span>'
+    : '<span class="badge badge-offline">● Hors ligne</span>';
+  document.getElementById('modal-exp').textContent = w.experience + ' ans';
+  document.getElementById('modal-price').textContent = w.pricePerHour.toLocaleString() + ' DA/h';
+  document.getElementById('modal-dist').textContent = dist.toFixed(1) + ' km';
+  document.getElementById('modal-zone').textContent = w.serviceRadius + ' km';
+  document.getElementById('modal-bio').textContent = w.bio;
+
+  // Reset stars
+  setStar(0);
+  document.getElementById('review-comment').value = '';
+
+  document.getElementById('worker-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('worker-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function closeModalIfOutside(e) {
+  if (e.target === document.getElementById('worker-modal')) closeModal();
+}
+
+function contactWorker() {
+  if (!APP.selectedWorker) return;
+  const w = APP.selectedWorker;
+  toast('📞 Demande envoyée à ' + w.name + ' !', 'success');
+}
+
+// ─── RATING ───────────────────────────────────────────
+function setStar(n) {
+  APP.selectedStar = n;
+  document.querySelectorAll('.star-btn').forEach((btn, i) => {
+    const isFilled = i < n;
+    btn.textContent = isFilled ? '★' : '☆';
+    btn.classList.toggle('active', isFilled);
+  });
+}
+
+function submitReview() {
+  if (!APP.selectedStar) { toast('Veuillez choisir une note', 'error'); return; }
+  const comment = document.getElementById('review-comment').value.trim();
+  const w = APP.selectedWorker;
+  if (!w) return;
+
+  // Update demo data
+  const newCount = w.reviewCount + 1;
+  const newRating = Math.round(((w.rating * w.reviewCount + APP.selectedStar) / newCount) * 10) / 10;
+  w.reviewCount = newCount;
+  w.rating = newRating;
+
+  toast('Merci pour votre avis ! (' + APP.selectedStar + '★)', 'success');
+  setStar(0);
+  document.getElementById('review-comment').value = '';
+  closeModal();
+  renderWorkers();
+}
+
+// ─── WORKER DASHBOARD ─────────────────────────────────
+function initWorkerDashboard(user) {
+  document.getElementById('worker-user-name').textContent = user.name.split(' ')[0];
+  document.getElementById('worker-avatar-letter').textContent = user.name[0].toUpperCase();
+
+  document.getElementById('w-name').value = user.name || '';
+  document.getElementById('w-trade').value = user.trade || 'plombier';
+  document.getElementById('w-exp').value = user.experience || '';
+  document.getElementById('w-price').value = user.pricePerHour || '';
+  document.getElementById('w-bio').value = user.bio || '';
+  document.getElementById('w-radius').value = user.serviceRadius || 15;
+
+  const isOnline = user.isOnline || false;
+  document.getElementById('online-toggle').checked = isOnline;
+  updateToggleUI(isOnline);
+
+  document.getElementById('w-rating').textContent = user.rating > 0 ? user.rating.toFixed(1) : '—';
+  document.getElementById('w-reviews').textContent = user.reviewCount || 0;
+}
+
+function toggleOnlineStatus() {
+  const isOnline = document.getElementById('online-toggle').checked;
+  APP.workerOnline = isOnline;
+  updateToggleUI(isOnline);
+
+  if (APP.currentUser) {
+    const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
+    const idx = stored.findIndex(u => u.id === APP.currentUser.id);
+    if (idx >= 0) { stored[idx].isOnline = isOnline; localStorage.setItem('rigliha_users', JSON.stringify(stored)); }
+    APP.currentUser.isOnline = isOnline;
+    localStorage.setItem('rigliha_session', JSON.stringify(APP.currentUser));
+  }
+  toast(isOnline ? '🟢 Vous êtes maintenant EN LIGNE' : '⚫ Vous êtes HORS LIGNE', isOnline ? 'success' : '');
+}
+
+function updateToggleUI(isOnline) {
+  const card = document.getElementById('toggle-card');
+  const label = document.getElementById('toggle-label');
+  const sub = document.getElementById('toggle-sub');
+  card.classList.toggle('online', isOnline);
+  label.textContent = isOnline ? 'EN LIGNE' : 'HORS LIGNE';
+  label.style.color = isOnline ? 'var(--green)' : 'var(--text)';
+  sub.textContent = isOnline
+    ? 'Les clients peuvent vous voir sur la carte 🗺️'
+    : 'Activez pour être visible par les clients';
+}
+
+function saveWorkerProfile() {
+  if (!APP.currentUser) return;
+  const updates = {
+    name: document.getElementById('w-name').value,
+    trade: document.getElementById('w-trade').value,
+    experience: parseInt(document.getElementById('w-exp').value) || 1,
+    pricePerHour: parseInt(document.getElementById('w-price').value) || 2000,
+    serviceRadius: parseInt(document.getElementById('w-radius').value) || 15,
+    bio: document.getElementById('w-bio').value,
+  };
+
+  Object.assign(APP.currentUser, updates);
+  localStorage.setItem('rigliha_session', JSON.stringify(APP.currentUser));
+  const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
+  const idx = stored.findIndex(u => u.id === APP.currentUser.id);
+  if (idx >= 0) { Object.assign(stored[idx], updates); localStorage.setItem('rigliha_users', JSON.stringify(stored)); }
+
+  toast('Profil mis à jour avec succès ✓', 'success');
+}
+
+// ─── TOAST ────────────────────────────────────────────
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+// ─── INIT ─────────────────────────────────────────────
+(function init() {
+  // Restore session
+  const session = localStorage.getItem('rigliha_session');
+  if (session) {
+    try {
+      const user = JSON.parse(session);
+      APP.currentUser = user;
+      goToDashboard(user);
+    } catch(e) {
+      showPage('landing');
+    }
+  } else {
+    showPage('landing');
+  }
+
+  // Add demo worker accounts to localStorage if not present
+  const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
+  const hasDemo = stored.find(u => u.email === 'demo@worker.com');
+  if (!hasDemo) {
+    stored.push({
+      id: 'demo-worker', name: 'Mohammed Aïssaoui', email: 'demo@worker.com',
+      password: '123456', role: 'worker', trade: 'plombier',
+      experience: 12, pricePerHour: 2000, rating: 4.8, reviewCount: 127,
+      isOnline: false, bio: 'Plombier expérimenté, disponible 7j/7.',
+      serviceRadius: 15,
+    });
+    stored.push({
+      id: 'demo-client', name: 'Ahmed Taleb', email: 'demo@client.com',
+      password: '123456', role: 'client',
+    });
+    localStorage.setItem('rigliha_users', JSON.stringify(stored));
+  }
+})();
+</script>
+</body>
+</html>
