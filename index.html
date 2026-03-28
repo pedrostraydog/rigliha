@@ -6,1658 +6,792 @@
   <title>Rigliha — Le pro qu'il vous faut, là où vous êtes</title>
   <meta name="description" content="Rigliha.com — Trouvez un artisan qualifié près de chez vous en quelques secondes." />
   <meta property="og:url" content="https://rigliha.com" />
-  <meta property="og:title" content="Rigliha — Le pro qu'il vous faut, là où vous êtes" />
-  <meta property="og:description" content="Trouvez un artisan qualifié près de chez vous en quelques secondes." />
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
   <style>
     :root {
-      --bg: #0a0a0f;
-      --bg2: #111118;
-      --bg3: #18181f;
-      --bg4: #1e1e28;
-      --orange: #f5a623;
-      --red: #e8431a;
-      --green: #22c55e;
-      --gray: #6b7280;
-      --gray2: #374151;
-      --text: #f1f1f3;
-      --text2: #9ca3af;
-      --border: rgba(255,255,255,0.07);
-      --card: rgba(255,255,255,0.04);
-      --radius: 14px;
-      --radius-sm: 8px;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    h1, h2, h3, h4 { font-family: 'Syne', sans-serif; }
-
-    /* ─── UTILITIES ─────────────────────────────── */
-    .hidden { display: none !important; }
-    .flex { display: flex; }
-    .flex-col { flex-direction: column; }
-    .items-center { align-items: center; }
-    .justify-center { justify-content: center; }
-    .gap-8 { gap: 8px; }
-    .gap-12 { gap: 12px; }
-    .gap-16 { gap: 16px; }
-    .gap-20 { gap: 20px; }
-
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 12px 24px; border-radius: var(--radius-sm);
-      font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 15px;
-      cursor: pointer; border: none; transition: all 0.2s ease;
-      white-space: nowrap;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--orange), var(--red));
-      color: #fff;
-    }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(245,166,35,0.3); }
-    .btn-outline {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text2);
-    }
-    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
-    .btn-sm { padding: 8px 16px; font-size: 13px; }
-    .btn-ghost { background: transparent; color: var(--text2); }
-    .btn-ghost:hover { color: var(--text); }
-
-    .badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 4px 10px; border-radius: 99px;
-      font-size: 12px; font-weight: 600;
-    }
-    .badge-online { background: rgba(34,197,94,0.15); color: var(--green); }
-    .badge-offline { background: rgba(107,114,128,0.2); color: var(--gray); }
-
-    input, select, textarea {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: var(--radius-sm);
-      padding: 12px 16px;
-      font-size: 15px;
-      outline: none;
-      width: 100%;
-      transition: border-color 0.2s;
-    }
-    input:focus, select:focus, textarea:focus { border-color: var(--orange); }
-    input::placeholder, textarea::placeholder { color: var(--text2); }
-    select option { background: var(--bg3); }
-    label { font-size: 13px; color: var(--text2); font-weight: 500; margin-bottom: 6px; display: block; }
-    textarea { resize: vertical; min-height: 90px; }
-
-    /* ─── SPINNER ────────────────────────────────── */
-    .spinner {
-      width: 36px; height: 36px;
-      border: 3px solid var(--border);
-      border-top-color: var(--orange);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ─── TOAST ──────────────────────────────────── */
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-      background: var(--bg4); border: 1px solid var(--border);
-      padding: 12px 20px; border-radius: var(--radius-sm);
-      font-size: 14px; font-weight: 500;
-      opacity: 0; transition: all 0.3s; z-index: 9999;
-      pointer-events: none; max-width: 320px; text-align: center;
-    }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    #toast.success { border-color: rgba(34,197,94,0.4); color: var(--green); }
-    #toast.error { border-color: rgba(232,67,26,0.4); color: var(--red); }
-
-    /* ─── SCROLLBAR ──────────────────────────────── */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: var(--bg2); }
-    ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
-
-    /* ═══════════════════════════════════════════════
-       LANDING PAGE
-    ═══════════════════════════════════════════════ */
-    #page-landing {
-      min-height: 100vh;
-      display: flex; flex-direction: column;
-      position: relative; overflow: hidden;
-    }
-
-    .landing-bg {
-      position: absolute; inset: 0; z-index: 0;
-      background:
-        radial-gradient(ellipse 60% 50% at 20% 30%, rgba(245,166,35,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 40% at 80% 70%, rgba(232,67,26,0.06) 0%, transparent 60%),
-        var(--bg);
-    }
-    .landing-grid {
-      position: absolute; inset: 0;
-      background-image: linear-gradient(var(--border) 1px, transparent 1px),
-                        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 60px 60px;
-      opacity: 0.4;
-    }
-
-    .landing-nav {
-      position: relative; z-index: 1;
-      padding: 24px 32px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800; font-size: 26px;
-      background: linear-gradient(135deg, var(--orange), var(--red));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text; text-decoration: none;
-      letter-spacing: -0.5px;
-    }
-
-    .landing-hero {
-      position: relative; z-index: 1;
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 40px 24px 20px;
-      text-align: center;
-    }
-
-    .landing-eyebrow {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.2);
-      padding: 6px 16px; border-radius: 99px;
-      font-size: 13px; font-weight: 600; color: var(--orange);
-      margin-bottom: 24px;
-      animation: fadeInDown 0.6s ease;
-    }
-
-    .landing-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800; font-size: clamp(40px, 7vw, 80px);
-      line-height: 1.05; letter-spacing: -2px;
-      margin-bottom: 20px;
-      animation: fadeInUp 0.7s ease 0.1s both;
-    }
-    .landing-title span {
-      background: linear-gradient(135deg, var(--orange), var(--red));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .landing-sub {
-      font-size: 18px; color: var(--text2);
-      max-width: 480px; line-height: 1.6;
-      margin-bottom: 52px;
-      animation: fadeInUp 0.7s ease 0.2s both;
-    }
-
-    .landing-cards {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 20px; max-width: 640px; width: 100%;
-      animation: fadeInUp 0.7s ease 0.3s both;
-    }
-
-    .landing-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 32px 28px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative; overflow: hidden;
-    }
-    .landing-card::before {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(245,166,35,0.08), transparent);
-      opacity: 0; transition: opacity 0.3s;
-    }
-    .landing-card:hover { border-color: rgba(245,166,35,0.4); transform: translateY(-4px); }
-    .landing-card:hover::before { opacity: 1; }
-
-    .card-icon {
-      font-size: 40px; margin-bottom: 16px; display: block;
-    }
-    .card-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700; font-size: 18px;
-      margin-bottom: 8px;
-    }
-    .card-desc { font-size: 14px; color: var(--text2); line-height: 1.5; }
-
-    .landing-footer {
-      position: relative; z-index: 1;
-      padding: 24px; text-align: center;
-      font-size: 13px; color: var(--gray);
-    }
-
-    @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ═══════════════════════════════════════════════
-       AUTH PAGE
-    ═══════════════════════════════════════════════ */
-    #page-auth {
-      min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-      padding: 24px;
-      background:
-        radial-gradient(ellipse 50% 60% at 50% 0%, rgba(245,166,35,0.07) 0%, transparent 60%),
-        var(--bg);
-    }
-
-    .auth-box {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 40px 36px;
-      width: 100%; max-width: 440px;
-      animation: fadeInUp 0.4s ease;
-    }
-
-    .auth-logo { text-align: center; margin-bottom: 8px; }
-    .auth-sub-title { text-align: center; font-size: 14px; color: var(--text2); margin-bottom: 28px; }
-
-    .auth-tabs {
-      display: flex; gap: 4px;
-      background: var(--bg3);
-      border-radius: var(--radius-sm);
-      padding: 4px;
-      margin-bottom: 28px;
-    }
-    .auth-tab {
-      flex: 1; padding: 10px; border-radius: 6px;
-      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
-      background: transparent; border: none; color: var(--text2);
-      cursor: pointer; transition: all 0.2s;
-    }
-    .auth-tab.active { background: var(--bg4); color: var(--text); }
-
-    .auth-form { display: flex; flex-direction: column; gap: 16px; }
-
-    .role-selector {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .role-option {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 14px 12px;
-      cursor: pointer; transition: all 0.2s;
-      text-align: center;
-    }
-    .role-option:hover { border-color: rgba(245,166,35,0.4); }
-    .role-option.selected { border-color: var(--orange); background: rgba(245,166,35,0.08); }
-    .role-option .role-icon { font-size: 24px; display: block; margin-bottom: 6px; }
-    .role-option .role-label { font-size: 13px; font-weight: 600; }
-    .role-option .role-sub { font-size: 11px; color: var(--text2); }
-
-    .divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
-
-    .auth-back {
-      display: inline-flex; align-items: center; gap: 6px;
-      color: var(--text2); font-size: 14px; cursor: pointer;
-      margin-bottom: 24px; background: none; border: none;
-    }
-    .auth-back:hover { color: var(--text); }
-
-    /* ═══════════════════════════════════════════════
-       COMMON DASHBOARD LAYOUT
-    ═══════════════════════════════════════════════ */
-    .dash-header {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(10,10,15,0.9);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 20px;
-      height: 60px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-
-    .header-right { display: flex; align-items: center; gap: 12px; }
-
-    .user-chip {
-      display: flex; align-items: center; gap: 8px;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 99px; padding: 6px 12px 6px 6px;
-    }
-    .user-avatar {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--orange), var(--red));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 700; color: #fff;
-    }
-    .user-name { font-size: 13px; font-weight: 500; }
-
-    /* ═══════════════════════════════════════════════
-       CLIENT DASHBOARD
-    ═══════════════════════════════════════════════ */
-    #page-client { min-height: 100vh; }
-
-    .client-body { padding: 20px; }
-
-    .location-bar {
-      display: flex; align-items: center; gap: 10px;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 10px 16px;
-      margin-bottom: 20px;
-      font-size: 14px; color: var(--text2);
-    }
-    .location-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--orange);
-      box-shadow: 0 0 0 3px rgba(245,166,35,0.3);
-      flex-shrink: 0;
-    }
-
-    .section-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 16px; font-weight: 700;
-      margin-bottom: 14px;
-    }
-
-    .trade-pills {
-      display: flex; gap: 8px;
-      overflow-x: auto; padding-bottom: 4px;
-      margin-bottom: 20px;
-      scrollbar-width: none;
-    }
-    .trade-pills::-webkit-scrollbar { display: none; }
-
-    .pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border-radius: 99px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      font-size: 13px; font-weight: 500; color: var(--text2);
-      cursor: pointer; white-space: nowrap; transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .pill:hover { border-color: rgba(245,166,35,0.4); color: var(--text); }
-    .pill.active {
-      background: rgba(245,166,35,0.12);
-      border-color: var(--orange); color: var(--orange);
-    }
-
-    /* MAP */
-    #map-container {
-      border-radius: var(--radius);
-      overflow: hidden;
-      border: 1px solid var(--border);
-      margin-bottom: 24px;
-      position: relative;
-    }
-    #map { height: 340px; width: 100%; background: var(--bg3); }
-
-    .map-overlay-loading {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--bg3); z-index: 1000;
-    }
-
-    /* WORKER CARDS */
-    .workers-grid {
-      display: flex; flex-direction: column; gap: 14px;
-    }
-
-    .worker-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      display: flex; align-items: center; gap: 14px;
-      cursor: pointer; transition: all 0.25s;
-    }
-    .worker-card:hover { border-color: rgba(245,166,35,0.35); transform: translateX(3px); }
-
-    .worker-photo {
-      width: 56px; height: 56px; border-radius: 12px;
-      object-fit: cover; flex-shrink: 0;
-      background: var(--bg3);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px;
-    }
-
-    .worker-info { flex: 1; min-width: 0; }
-    .worker-name {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700; font-size: 15px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .worker-trade { font-size: 13px; color: var(--text2); margin: 2px 0; }
-    .worker-meta {
-      display: flex; align-items: center; gap: 10px;
-      margin-top: 6px;
-    }
-    .worker-rating { font-size: 13px; color: var(--orange); font-weight: 600; }
-    .worker-dist { font-size: 12px; color: var(--text2); }
-    .worker-price { font-size: 12px; color: var(--text2); }
-
-    .worker-contact-btn {
-      flex-shrink: 0;
-    }
-
-    .stars { color: var(--orange); letter-spacing: 1px; font-size: 13px; }
-
-    .empty-state {
-      text-align: center; padding: 48px 24px;
-      color: var(--text2); font-size: 15px;
-    }
-    .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
-
-    /* ═══════════════════════════════════════════════
-       WORKER DASHBOARD
-    ═══════════════════════════════════════════════ */
-    #page-worker { min-height: 100vh; }
-
-    .worker-body { padding: 20px; max-width: 600px; margin: 0 auto; }
-
-    /* Toggle */
-    .online-toggle-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 28px 24px;
-      text-align: center;
-      margin-bottom: 20px;
-      transition: all 0.4s;
-    }
-    .online-toggle-card.online {
-      border-color: rgba(34,197,94,0.4);
-      background: rgba(34,197,94,0.05);
-    }
-
-    .toggle-label {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700; font-size: 20px;
-      margin-bottom: 6px;
-    }
-    .toggle-sub { font-size: 14px; color: var(--text2); margin-bottom: 20px; }
-
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 72px; height: 36px;
-    }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-      position: absolute; inset: 0;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      cursor: pointer; transition: all 0.3s;
-    }
-    .toggle-slider::before {
-      content: '';
-      position: absolute; left: 4px; top: 50%;
-      transform: translateY(-50%);
-      width: 26px; height: 26px;
-      background: var(--gray);
-      border-radius: 50%;
-      transition: all 0.3s;
-    }
-    input:checked + .toggle-slider { background: rgba(34,197,94,0.2); border-color: var(--green); }
-    input:checked + .toggle-slider::before { transform: translateX(36px) translateY(-50%); background: var(--green); box-shadow: 0 0 12px rgba(34,197,94,0.5); }
-
-    /* Stats */
-    .stats-row {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 12px; margin-bottom: 20px;
-    }
-    .stat-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px 16px;
-      text-align: center;
-    }
-    .stat-value {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800; font-size: 24px;
-      color: var(--orange); margin-bottom: 4px;
-    }
-    .stat-label { font-size: 12px; color: var(--text2); }
-
-    /* Profile edit */
-    .profile-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 20px; padding: 24px;
-      margin-bottom: 20px;
-    }
-    .profile-card-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 15px; font-weight: 700;
-      margin-bottom: 18px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-    /* Requests */
-    .request-item {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 14px 16px;
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 10px;
-    }
-    .req-icon { font-size: 20px; }
-    .req-info { flex: 1; }
-    .req-name { font-weight: 600; font-size: 14px; }
-    .req-time { font-size: 12px; color: var(--text2); }
-    .req-badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
-    .req-pending { background: rgba(245,166,35,0.15); color: var(--orange); }
-    .req-done { background: rgba(34,197,94,0.15); color: var(--green); }
-
-    /* ═══════════════════════════════════════════════
-       MODAL
-    ═══════════════════════════════════════════════ */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 500;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(4px);
-      display: flex; align-items: flex-end; justify-content: center;
-      padding: 0;
-      animation: fadeIn 0.2s ease;
-    }
-
-    .modal {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 24px 24px 0 0;
-      padding: 28px 24px 32px;
-      width: 100%; max-width: 480px;
-      max-height: 90vh; overflow-y: auto;
-      animation: slideUp 0.3s ease;
-    }
-
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-
-    .modal-handle {
-      width: 40px; height: 4px;
-      background: var(--border); border-radius: 2px;
-      margin: 0 auto 24px;
-    }
-    .modal-close {
-      position: absolute; top: 20px; right: 20px;
-      background: var(--card); border: 1px solid var(--border);
-      color: var(--text2); border-radius: 50%;
-      width: 32px; height: 32px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; cursor: pointer;
-    }
-
-    .modal-worker-header {
-      display: flex; align-items: center; gap: 16px;
-      margin-bottom: 20px;
-    }
-    .modal-worker-photo {
-      width: 72px; height: 72px; border-radius: 16px;
-      font-size: 36px; display: flex; align-items: center; justify-content: center;
-      background: var(--bg3); flex-shrink: 0;
-    }
-    .modal-worker-name {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800; font-size: 22px; line-height: 1.1;
-    }
-    .modal-worker-trade { color: var(--text2); font-size: 14px; margin: 4px 0; }
-    .modal-worker-rating { color: var(--orange); font-size: 14px; font-weight: 600; }
-
-    .modal-details {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 10px; margin: 20px 0;
-    }
-    .detail-chip {
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 12px 14px;
-    }
-    .detail-chip-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
-    .detail-chip-value { font-size: 15px; font-weight: 600; }
-
-    .modal-bio {
-      font-size: 14px; color: var(--text2); line-height: 1.6;
-      margin-bottom: 20px;
-    }
-
-    .rating-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
-    .rating-form-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 14px; }
-
-    .star-input { display: flex; gap: 6px; margin-bottom: 12px; }
-    .star-btn {
-      font-size: 28px; background: none; border: none;
-      cursor: pointer; color: var(--gray2);
-      transition: all 0.15s; line-height: 1;
-    }
-    .star-btn.active, .star-btn:hover { color: var(--orange); transform: scale(1.1); }
-
-    /* Leaflet overrides */
-    .leaflet-container { background: #1a1a24; }
-    .leaflet-popup-content-wrapper {
-      background: var(--bg2) !important;
-      color: var(--text) !important;
-      border: 1px solid var(--border) !important;
-      border-radius: 12px !important;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
-    }
-    .leaflet-popup-tip { background: var(--bg2) !important; }
-    .leaflet-popup-content { font-family: 'DM Sans', sans-serif !important; }
-    .leaflet-control-zoom a {
-      background: var(--bg2) !important; color: var(--text) !important;
-      border-color: var(--border) !important;
-    }
-    .leaflet-control-zoom a:hover { background: var(--bg3) !important; }
-    .leaflet-tile { filter: brightness(0.8) hue-rotate(200deg) saturate(0.6); }
-
-    /* Custom pulse marker */
-    .pulse-ring {
-      width: 20px; height: 20px;
-      border-radius: 50%;
-      background: var(--orange);
-      box-shadow: 0 0 0 0 rgba(245,166,35,0.5);
-      animation: pulse-anim 1.8s infinite;
-    }
-    @keyframes pulse-anim {
-      0% { box-shadow: 0 0 0 0 rgba(245,166,35,0.5); }
-      70% { box-shadow: 0 0 0 14px rgba(245,166,35,0); }
-      100% { box-shadow: 0 0 0 0 rgba(245,166,35,0); }
-    }
-
-    /* Responsive */
-    @media (max-width: 480px) {
-      .landing-cards { grid-template-columns: 1fr; max-width: 320px; }
-      .auth-box { padding: 28px 20px; }
-      .form-row { grid-template-columns: 1fr; }
-      .modal { border-radius: 20px 20px 0 0; }
+      --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1e1e28;
+      --orange:#f5a623; --red:#e8431a; --green:#22c55e;
+      --gray:#6b7280; --text:#f1f1f3; --text2:#9ca3af;
+      --border:rgba(255,255,255,0.08); --card:rgba(255,255,255,0.04);
+      --r:14px; --rs:8px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+    h1,h2,h3,h4{font-family:'Syne',sans-serif}
+    .page{display:none;min-height:100vh}
+    .page.active{display:block}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-weight:600;font-size:15px;cursor:pointer;border:none;transition:all .2s}
+    .btn-primary{background:linear-gradient(135deg,var(--orange),var(--red));color:#fff}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(245,166,35,.3)}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+    .btn-outline:hover{border-color:var(--orange);color:var(--orange)}
+    .btn-ghost{background:transparent;border:none;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600}
+    .btn-ghost:hover{color:var(--text)}
+    .btn-sm{padding:8px 16px;font-size:13px}
+    .btn-full{width:100%}
+    input,select,textarea{font-family:'DM Sans',sans-serif;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:var(--rs);padding:12px 16px;font-size:15px;outline:none;width:100%;transition:border-color .2s}
+    input:focus,select:focus,textarea:focus{border-color:var(--orange)}
+    input::placeholder,textarea::placeholder{color:var(--text2)}
+    select option{background:var(--bg3)}
+    label{font-size:13px;color:var(--text2);font-weight:500;margin-bottom:6px;display:block}
+    textarea{resize:vertical;min-height:90px}
+    #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg4);border:1px solid var(--border);padding:12px 22px;border-radius:var(--rs);font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;max-width:320px;text-align:center;white-space:nowrap}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    #toast.success{border-color:rgba(34,197,94,.4);color:var(--green)}
+    #toast.error{border-color:rgba(232,67,26,.4);color:var(--red)}
+    .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-track{background:var(--bg2)}
+    ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+
+    /* LANDING */
+    #page-landing{background:radial-gradient(ellipse 60% 50% at 20% 30%,rgba(245,166,35,.08) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 80% 70%,rgba(232,67,26,.06) 0%,transparent 60%),var(--bg);position:relative;overflow:hidden}
+    .grid-bg{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.4;pointer-events:none}
+    .land-nav{position:relative;z-index:1;padding:24px 32px;display:flex;align-items:center;justify-content:space-between}
+    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px;cursor:default}
+    .land-hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;min-height:calc(100vh - 80px)}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);padding:6px 16px;border-radius:99px;font-size:13px;font-weight:600;color:var(--orange);margin-bottom:24px;animation:fadeUp .6s ease both}
+    .land-title{font-weight:800;font-size:clamp(36px,6vw,76px);line-height:1.05;letter-spacing:-2px;margin-bottom:20px;animation:fadeUp .6s ease .1s both}
+    .land-title span{background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .land-sub{font-size:18px;color:var(--text2);max-width:460px;line-height:1.6;margin-bottom:48px;animation:fadeUp .6s ease .2s both}
+    .land-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:580px;width:100%;animation:fadeUp .6s ease .3s both}
+    .land-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 22px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+    .land-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(245,166,35,.08),transparent);opacity:0;transition:opacity .3s;pointer-events:none}
+    .land-card:hover{border-color:rgba(245,166,35,.4);transform:translateY(-4px)}
+    .land-card:hover::before{opacity:1}
+    .card-icon{font-size:38px;display:block;margin-bottom:14px}
+    .card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;margin-bottom:8px}
+    .card-desc{font-size:14px;color:var(--text2);line-height:1.5}
+    .land-footer{position:relative;z-index:1;padding:20px;text-align:center;font-size:13px;color:var(--gray)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+    /* AUTH */
+    #page-auth{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 50% 60% at 50% 0%,rgba(245,166,35,.07) 0%,transparent 60%),var(--bg)}
+    #page-auth.active{display:flex}
+    .auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:36px;width:100%;max-width:440px;animation:fadeUp .4s ease}
+    .auth-back{display:inline-flex;align-items:center;gap:6px;color:var(--text2);font-size:14px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;margin-bottom:20px;padding:0}
+    .auth-back:hover{color:var(--text)}
+    .auth-logo{text-align:center;margin-bottom:6px}
+    .auth-tagline{text-align:center;font-size:14px;color:var(--text2);margin-bottom:24px}
+    .auth-tabs{display:flex;gap:4px;background:var(--bg3);border-radius:var(--rs);padding:4px;margin-bottom:24px}
+    .auth-tab{flex:1;padding:10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;background:transparent;border:none;color:var(--text2);cursor:pointer;transition:all .2s}
+    .auth-tab.active{background:var(--bg4);color:var(--text)}
+    .auth-form{display:flex;flex-direction:column;gap:14px}
+    .form-group{display:flex;flex-direction:column}
+    .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .role-opt{border:1px solid var(--border);border-radius:var(--rs);padding:14px 10px;cursor:pointer;transition:all .2s;text-align:center}
+    .role-opt:hover{border-color:rgba(245,166,35,.4)}
+    .role-opt.selected{border-color:var(--orange);background:rgba(245,166,35,.08)}
+    .role-icon{font-size:26px;display:block;margin-bottom:6px}
+    .role-label{font-size:13px;font-weight:700}
+    .role-sub{font-size:11px;color:var(--text2)}
+    .divider{border:none;border-top:1px solid var(--border)}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .auth-link{text-align:center;font-size:13px;color:var(--text2)}
+    .auth-link span{color:var(--orange);cursor:pointer}
+    .auth-link span:hover{text-decoration:underline}
+
+    /* DASH HEADER */
+    .dash-header{position:sticky;top:0;z-index:100;background:rgba(10,10,15,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between}
+    .header-right{display:flex;align-items:center;gap:10px}
+    .user-chip{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:99px;padding:5px 12px 5px 5px}
+    .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--red));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+    .uname{font-size:13px;font-weight:500}
+
+    /* CLIENT */
+    #page-client{display:none}
+    #page-client.active{display:block}
+    .client-body{padding:18px}
+    .loc-bar{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:10px 16px;margin-bottom:18px;font-size:14px;color:var(--text2)}
+    .loc-dot{width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 3px rgba(245,166,35,.3);flex-shrink:0;animation:pulse-dot 1.8s infinite}
+    @keyframes pulse-dot{0%{box-shadow:0 0 0 0 rgba(245,166,35,.5)}70%{box-shadow:0 0 0 10px rgba(245,166,35,0)}100%{box-shadow:0 0 0 0 rgba(245,166,35,0)}}
+    .sec-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:12px}
+    .pills{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:18px;scrollbar-width:none}
+    .pills::-webkit-scrollbar{display:none}
+    .pill{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:99px;border:1px solid var(--border);background:var(--card);font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0}
+    .pill:hover{border-color:rgba(245,166,35,.4);color:var(--text)}
+    .pill.active{background:rgba(245,166,35,.12);border-color:var(--orange);color:var(--orange)}
+    #map-wrap{border-radius:var(--r);overflow:hidden;border:1px solid var(--border);margin-bottom:22px;position:relative}
+    #map{height:320px;width:100%;background:var(--bg3)}
+    .map-loader{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--bg3);z-index:400}
+    .map-loader span{font-size:13px;color:var(--text2)}
+    .workers-list{display:flex;flex-direction:column;gap:12px}
+    .wcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .25s}
+    .wcard:hover{border-color:rgba(245,166,35,.3);transform:translateX(3px)}
+    .wcard-photo{width:52px;height:52px;border-radius:12px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+    .wcard-info{flex:1;min-width:0}
+    .wcard-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .wcard-trade{font-size:13px;color:var(--text2);margin:2px 0}
+    .wcard-meta{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+    .wcard-rating{font-size:13px;color:var(--orange);font-weight:600}
+    .wcard-detail{font-size:12px;color:var(--text2)}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap;flex-shrink:0}
+    .badge-on{background:rgba(34,197,94,.15);color:var(--green)}
+    .badge-off{background:rgba(107,114,128,.2);color:var(--gray)}
+    .empty{text-align:center;padding:48px 24px;color:var(--text2)}
+    .empty-icon{font-size:48px;display:block;margin-bottom:12px}
+
+    /* LEAFLET */
+    .leaflet-popup-content-wrapper{background:var(--bg2)!important;color:var(--text)!important;border:1px solid var(--border)!important;border-radius:12px!important;box-shadow:0 8px 32px rgba(0,0,0,.5)!important}
+    .leaflet-popup-tip{background:var(--bg2)!important}
+    .leaflet-popup-content{font-family:'DM Sans',sans-serif!important;margin:12px 16px!important}
+    .leaflet-control-zoom a{background:var(--bg2)!important;color:var(--text)!important;border-color:var(--border)!important}
+    .leaflet-control-zoom a:hover{background:var(--bg3)!important}
+    .leaflet-tile{filter:brightness(.75) saturate(.6)}
+
+    /* WORKER DASH */
+    #page-worker{display:none}
+    #page-worker.active{display:block}
+    .worker-body{padding:18px;max-width:580px;margin:0 auto}
+    .toggle-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px 24px;text-align:center;margin-bottom:18px;transition:all .4s}
+    .toggle-card.online{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.04)}
+    .toggle-title{font-family:'Syne',sans-serif;font-weight:700;font-size:20px;margin-bottom:6px;transition:color .3s}
+    .toggle-sub{font-size:14px;color:var(--text2);margin-bottom:20px}
+    .switch{position:relative;display:inline-block;width:72px;height:36px}
+    .switch input{opacity:0;width:0;height:0}
+    .slider{position:absolute;inset:0;background:var(--bg3);border:1px solid var(--border);border-radius:18px;cursor:pointer;transition:all .3s}
+    .slider::before{content:'';position:absolute;left:4px;top:50%;transform:translateY(-50%);width:26px;height:26px;background:var(--gray);border-radius:50%;transition:all .3s}
+    input:checked+.slider{background:rgba(34,197,94,.2);border-color:var(--green)}
+    input:checked+.slider::before{transform:translate(36px,-50%);background:var(--green);box-shadow:0 0 12px rgba(34,197,94,.5)}
+    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+    .stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 14px;text-align:center}
+    .stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:var(--orange);margin-bottom:4px}
+    .stat-lbl{font-size:12px;color:var(--text2)}
+    .pcard{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px;margin-bottom:16px}
+    .pcard-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px}
+    .pcard-form{display:flex;flex-direction:column;gap:12px}
+    .req-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .req-info{flex:1}
+    .req-name{font-weight:600;font-size:14px}
+    .req-time{font-size:12px;color:var(--text2)}
+    .req-badge{font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px}
+    .req-pending{background:rgba(245,166,35,.15);color:var(--orange)}
+    .req-done{background:rgba(34,197,94,.15);color:var(--green)}
+
+    /* MODAL */
+    #modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center}
+    #modal-overlay.open{display:flex;animation:fadeIn .2s ease}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:24px 22px 32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease;position:relative}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px}
+    .modal-close-btn{position:absolute;top:18px;right:18px;background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;font-family:sans-serif}
+    .modal-close-btn:hover{color:var(--text)}
+    .modal-header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+    .modal-photo{width:70px;height:70px;border-radius:16px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0}
+    .modal-name{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;line-height:1.1}
+    .modal-trade{color:var(--text2);font-size:14px;margin:3px 0}
+    .modal-rtext{color:var(--orange);font-size:13px;font-weight:600}
+    .modal-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+    .chip{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px}
+    .chip-lbl{font-size:11px;color:var(--text2);margin-bottom:3px}
+    .chip-val{font-size:14px;font-weight:600}
+    .modal-bio{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:18px}
+    .review-form{margin-top:18px;padding-top:18px;border-top:1px solid var(--border)}
+    .review-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:12px}
+    .star-row{display:flex;gap:6px;margin-bottom:12px}
+    .star-btn{font-size:28px;background:none;border:none;cursor:pointer;color:var(--bg4);transition:all .15s;line-height:1;padding:0}
+    .star-btn.lit{color:var(--orange)}
+    .star-btn:hover{transform:scale(1.15);color:var(--orange)}
+
+    @media(max-width:480px){
+      .land-cards{grid-template-columns:1fr;max-width:300px}
+      .auth-box{padding:24px 16px}
+      .form-row{grid-template-columns:1fr}
     }
   </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════ TOAST ══ -->
 <div id="toast"></div>
 
-<!-- ══════════════════════════════════════════════════════
-     PAGE: LANDING
-════════════════════════════════════════════════════════ -->
-<div id="page-landing">
-  <div class="landing-bg"></div>
-  <div class="landing-grid"></div>
-
-  <nav class="landing-nav">
+<!-- ══════════ LANDING ══════════ -->
+<div id="page-landing" class="page active">
+  <div class="grid-bg"></div>
+  <nav class="land-nav">
     <span class="logo">Rigliha</span>
-    <button class="btn btn-outline btn-sm" onclick="showPage('auth')">Se connecter</button>
+    <button class="btn btn-outline btn-sm" onclick="goAuth('login')">Se connecter</button>
   </nav>
-
-  <div class="landing-hero">
-    <div class="landing-eyebrow">
-      <span>🇩🇿</span> Artisans qualifiés en Algérie
-    </div>
-    <h1 class="landing-title">Le pro qu'il vous faut,<br><span>là où vous êtes</span></h1>
-    <p class="landing-sub">Trouvez un artisan qualifié près de chez vous en quelques secondes. Plombier, électricien, peintre… disponible maintenant.</p>
-
-    <div class="landing-cards">
-      <div class="landing-card" onclick="startAsClient()">
+  <div class="land-hero">
+    <div class="eyebrow">🇩🇿 Artisans qualifiés en Algérie</div>
+    <h1 class="land-title">Le pro qu'il vous faut,<br><span>là où vous êtes</span></h1>
+    <p class="land-sub">Trouvez un artisan qualifié près de chez vous en quelques secondes. Disponible maintenant.</p>
+    <div class="land-cards">
+      <div class="land-card" onclick="goAuth('register','client')">
         <span class="card-icon">🔍</span>
         <div class="card-title">Je cherche un artisan</div>
         <p class="card-desc">Trouvez le bon professionnel près de vous</p>
       </div>
-      <div class="landing-card" onclick="startAsWorker()">
+      <div class="land-card" onclick="goAuth('register','worker')">
         <span class="card-icon">🔧</span>
         <div class="card-title">Je suis artisan</div>
         <p class="card-desc">Trouvez des clients dans votre zone</p>
       </div>
     </div>
   </div>
-
-  <footer class="landing-footer">
-    © 2024 rigliha.com · Tous droits réservés
-  </footer>
+  <footer class="land-footer">© 2024 rigliha.com · Tous droits réservés</footer>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     PAGE: AUTH
-════════════════════════════════════════════════════════ -->
-<div id="page-auth" class="hidden">
-  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background: radial-gradient(ellipse 50% 60% at 50% 0%, rgba(245,166,35,0.07) 0%, transparent 60%), var(--bg);">
-    <div class="auth-box">
-      <button class="auth-back" onclick="showPage('landing')">← Retour</button>
-      <div class="auth-logo"><span class="logo">Rigliha</span></div>
-      <p class="auth-sub-title">Connectez-vous ou créez votre compte</p>
+<!-- ══════════ AUTH ══════════ -->
+<div id="page-auth" class="page">
+  <div class="auth-box">
+    <button class="auth-back" onclick="showPage('landing')">← Retour</button>
+    <div class="auth-logo"><span class="logo">Rigliha</span></div>
+    <p class="auth-tagline">Connectez-vous ou créez votre compte</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Connexion</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Inscription</button>
+    </div>
 
-      <div class="auth-tabs">
-        <button class="auth-tab active" onclick="switchAuthTab('login', this)">Connexion</button>
-        <button class="auth-tab" onclick="switchAuthTab('register', this)">Inscription</button>
-      </div>
+    <!-- LOGIN -->
+    <div id="form-login" class="auth-form">
+      <div class="form-group"><label>Email</label><input type="email" id="l-email" placeholder="votre@email.com" /></div>
+      <div class="form-group"><label>Mot de passe</label><input type="password" id="l-pass" placeholder="••••••••" /></div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()">Se connecter</button>
+      <p class="auth-link">Pas de compte ? <span onclick="switchTab('register')">S'inscrire</span></p>
+      <p class="auth-link" style="font-size:12px;margin-top:-4px">Démo rapide : <span onclick="fillDemo('client')">client</span> · <span onclick="fillDemo('worker')">artisan</span></p>
+    </div>
 
-      <!-- LOGIN -->
-      <div id="auth-login" class="auth-form">
-        <div>
-          <label>Adresse email</label>
-          <input type="email" id="login-email" placeholder="votre@email.com" />
-        </div>
-        <div>
-          <label>Mot de passe</label>
-          <input type="password" id="login-password" placeholder="••••••••" />
-        </div>
-        <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">Se connecter</button>
-        <p style="text-align:center;font-size:13px;color:var(--text2)">
-          Pas encore de compte ? <span style="color:var(--orange);cursor:pointer" onclick="switchAuthTabByName('register')">S'inscrire</span>
-        </p>
-      </div>
-
-      <!-- REGISTER -->
-      <div id="auth-register" class="auth-form hidden">
-        <div>
-          <label>Vous êtes ?</label>
-          <div class="role-selector">
-            <div class="role-option selected" id="role-client" onclick="selectRole('client')">
-              <span class="role-icon">👤</span>
-              <div class="role-label">Client</div>
-              <div class="role-sub">Je cherche un artisan</div>
-            </div>
-            <div class="role-option" id="role-worker" onclick="selectRole('worker')">
-              <span class="role-icon">🔧</span>
-              <div class="role-label">Artisan</div>
-              <div class="role-sub">Je propose mes services</div>
-            </div>
+    <!-- REGISTER -->
+    <div id="form-register" class="auth-form" style="display:none">
+      <div class="form-group">
+        <label>Vous êtes ?</label>
+        <div class="role-grid">
+          <div class="role-opt selected" id="role-client" onclick="selectRole('client')">
+            <span class="role-icon">👤</span><div class="role-label">Client</div><div class="role-sub">Je cherche un artisan</div>
+          </div>
+          <div class="role-opt" id="role-worker" onclick="selectRole('worker')">
+            <span class="role-icon">🔧</span><div class="role-label">Artisan</div><div class="role-sub">Je propose mes services</div>
           </div>
         </div>
-        <div>
-          <label>Nom complet</label>
-          <input type="text" id="reg-name" placeholder="Mohammed Benali" />
-        </div>
-        <div>
-          <label>Email</label>
-          <input type="email" id="reg-email" placeholder="votre@email.com" />
-        </div>
-        <div>
-          <label>Mot de passe</label>
-          <input type="password" id="reg-password" placeholder="Minimum 6 caractères" />
-        </div>
-
-        <!-- Worker extra fields -->
-        <div id="worker-fields" class="hidden">
-          <hr class="divider" />
-          <div>
-            <label>Métier</label>
-            <select id="reg-trade">
-              <option value="">Choisir votre métier…</option>
-              <option value="plombier">🔧 Plombier</option>
-              <option value="electricien">⚡ Électricien</option>
-              <option value="macon">🧱 Maçon</option>
-              <option value="peintre">🎨 Peintre</option>
-              <option value="menuisier">🪚 Menuisier</option>
-              <option value="serrurier">🔐 Serrurier</option>
-              <option value="couvreur">🏠 Couvreur</option>
-              <option value="carreleur">🪣 Carreleur</option>
-              <option value="soudeur">🔩 Soudeur</option>
-              <option value="cvc">❄️ Climatisation / CVC</option>
-            </select>
-          </div>
-          <div class="form-row" style="margin-top:12px">
-            <div>
-              <label>Expérience (ans)</label>
-              <input type="number" id="reg-experience" placeholder="5" min="0" max="50" />
-            </div>
-            <div>
-              <label>Tarif (DA/h)</label>
-              <input type="number" id="reg-price" placeholder="1500" />
-            </div>
-          </div>
-        </div>
-
-        <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doRegister()">Créer mon compte</button>
       </div>
+      <div class="form-group"><label>Nom complet</label><input type="text" id="r-name" placeholder="Mohammed Benali" /></div>
+      <div class="form-group"><label>Email</label><input type="email" id="r-email" placeholder="votre@email.com" /></div>
+      <div class="form-group"><label>Mot de passe</label><input type="password" id="r-pass" placeholder="Minimum 6 caractères" /></div>
+      <div id="worker-extra" style="display:none;flex-direction:column;gap:12px">
+        <hr class="divider" />
+        <div class="form-group"><label>Votre métier</label>
+          <select id="r-trade"><option value="">Choisir…</option>
+            <option value="plombier">🔧 Plombier</option><option value="electricien">⚡ Électricien</option>
+            <option value="macon">🧱 Maçon</option><option value="peintre">🎨 Peintre</option>
+            <option value="menuisier">🪚 Menuisier</option><option value="serrurier">🔐 Serrurier</option>
+            <option value="couvreur">🏠 Couvreur</option><option value="carreleur">🪣 Carreleur</option>
+            <option value="soudeur">🔩 Soudeur</option><option value="cvc">❄️ Climatisation / CVC</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Expérience (ans)</label><input type="number" id="r-exp" placeholder="5" min="0" /></div>
+          <div class="form-group"><label>Tarif (DA/h)</label><input type="number" id="r-price" placeholder="2000" /></div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doRegister()">Créer mon compte</button>
+      <p class="auth-link">Déjà un compte ? <span onclick="switchTab('login')">Se connecter</span></p>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     PAGE: CLIENT DASHBOARD
-════════════════════════════════════════════════════════ -->
-<div id="page-client" class="hidden">
+<!-- ══════════ CLIENT DASHBOARD ══════════ -->
+<div id="page-client" class="page">
   <header class="dash-header">
     <span class="logo" style="font-size:22px">Rigliha</span>
     <div class="header-right">
-      <div class="user-chip">
-        <div class="user-avatar" id="client-avatar-letter"></div>
-        <span class="user-name" id="client-user-name"></span>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Déconnecter</button>
+      <div class="user-chip"><div class="avatar" id="c-avatar"></div><span class="uname" id="c-name"></span></div>
+      <button class="btn-ghost btn-sm" onclick="doLogout()">Déconnecter</button>
     </div>
   </header>
-
   <div class="client-body">
-    <!-- Location bar -->
-    <div class="location-bar">
-      <div class="location-dot"></div>
-      <span id="client-location-text">Localisation en cours…</span>
+    <div class="loc-bar"><div class="loc-dot"></div><span id="c-loc">Localisation en cours…</span></div>
+    <p class="sec-title">Quel artisan cherchez-vous ?</p>
+    <div class="pills">
+      <div class="pill active" onclick="filterTrade('all',this)">🗺️ Tous</div>
+      <div class="pill" onclick="filterTrade('plombier',this)">🔧 Plombier</div>
+      <div class="pill" onclick="filterTrade('electricien',this)">⚡ Électricien</div>
+      <div class="pill" onclick="filterTrade('macon',this)">🧱 Maçon</div>
+      <div class="pill" onclick="filterTrade('peintre',this)">🎨 Peintre</div>
+      <div class="pill" onclick="filterTrade('menuisier',this)">🪚 Menuisier</div>
+      <div class="pill" onclick="filterTrade('serrurier',this)">🔐 Serrurier</div>
+      <div class="pill" onclick="filterTrade('couvreur',this)">🏠 Couvreur</div>
+      <div class="pill" onclick="filterTrade('carreleur',this)">🪣 Carreleur</div>
+      <div class="pill" onclick="filterTrade('soudeur',this)">🔩 Soudeur</div>
+      <div class="pill" onclick="filterTrade('cvc',this)">❄️ CVC</div>
     </div>
-
-    <!-- Trade pills -->
-    <p class="section-title">Quel artisan cherchez-vous ?</p>
-    <div class="trade-pills" id="trade-pills">
-      <div class="pill active" data-trade="all" onclick="filterTrade('all', this)">🗺️ Tous</div>
-      <div class="pill" data-trade="plombier" onclick="filterTrade('plombier', this)">🔧 Plombier</div>
-      <div class="pill" data-trade="electricien" onclick="filterTrade('electricien', this)">⚡ Électricien</div>
-      <div class="pill" data-trade="macon" onclick="filterTrade('macon', this)">🧱 Maçon</div>
-      <div class="pill" data-trade="peintre" onclick="filterTrade('peintre', this)">🎨 Peintre</div>
-      <div class="pill" data-trade="menuisier" onclick="filterTrade('menuisier', this)">🪚 Menuisier</div>
-      <div class="pill" data-trade="serrurier" onclick="filterTrade('serrurier', this)">🔐 Serrurier</div>
-      <div class="pill" data-trade="couvreur" onclick="filterTrade('couvreur', this)">🏠 Couvreur</div>
-      <div class="pill" data-trade="carreleur" onclick="filterTrade('carreleur', this)">🪣 Carreleur</div>
-      <div class="pill" data-trade="soudeur" onclick="filterTrade('soudeur', this)">🔩 Soudeur</div>
-      <div class="pill" data-trade="cvc" onclick="filterTrade('cvc', this)">❄️ CVC</div>
-    </div>
-
-    <!-- Map -->
-    <div id="map-container">
-      <div class="map-overlay-loading" id="map-loading">
-        <div class="flex flex-col items-center gap-12">
-          <div class="spinner"></div>
-          <span style="font-size:14px;color:var(--text2)">Chargement de la carte…</span>
-        </div>
-      </div>
+    <div id="map-wrap">
+      <div class="map-loader" id="map-loader"><div class="spinner"></div><span>Chargement de la carte…</span></div>
       <div id="map"></div>
     </div>
-
-    <!-- Workers list -->
-    <p class="section-title">Artisans disponibles <span id="workers-count" style="color:var(--orange)"></span></p>
-    <div id="workers-list" class="workers-grid">
-      <div style="text-align:center;padding:40px 0">
-        <div class="spinner" style="margin:0 auto"></div>
-      </div>
-    </div>
+    <p class="sec-title">Artisans disponibles <span id="w-count" style="color:var(--orange)"></span></p>
+    <div id="workers-list"><div style="padding:32px 0;text-align:center"><div class="spinner"></div></div></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     PAGE: WORKER DASHBOARD
-════════════════════════════════════════════════════════ -->
-<div id="page-worker" class="hidden">
+<!-- ══════════ WORKER DASHBOARD ══════════ -->
+<div id="page-worker" class="page">
   <header class="dash-header">
     <span class="logo" style="font-size:22px">Rigliha</span>
     <div class="header-right">
-      <div class="user-chip">
-        <div class="user-avatar" id="worker-avatar-letter"></div>
-        <span class="user-name" id="worker-user-name"></span>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Déconnecter</button>
+      <div class="user-chip"><div class="avatar" id="w-avatar"></div><span class="uname" id="w-name-chip"></span></div>
+      <button class="btn-ghost btn-sm" onclick="doLogout()">Déconnecter</button>
     </div>
   </header>
-
   <div class="worker-body">
-    <!-- Online toggle -->
-    <div class="online-toggle-card" id="toggle-card">
-      <div class="toggle-label" id="toggle-label">HORS LIGNE</div>
-      <p class="toggle-sub" id="toggle-sub">Activez pour être visible par les clients</p>
-      <label class="toggle-switch">
-        <input type="checkbox" id="online-toggle" onchange="toggleOnlineStatus()" />
-        <span class="toggle-slider"></span>
-      </label>
+    <div class="toggle-card" id="toggle-card">
+      <div class="toggle-title" id="toggle-title">HORS LIGNE</div>
+      <p class="toggle-sub" id="toggle-sub">Activez pour être visible sur la carte</p>
+      <label class="switch"><input type="checkbox" id="online-chk" onchange="toggleOnline()"><span class="slider"></span></label>
     </div>
-
-    <!-- Stats -->
     <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-value" id="w-rating">4.9</div>
-        <div class="stat-label">⭐ Note</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="w-reviews">47</div>
-        <div class="stat-label">Avis clients</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="w-jobs">62</div>
-        <div class="stat-label">Jobs réalisés</div>
-      </div>
+      <div class="stat"><div class="stat-val" id="sw-rating">—</div><div class="stat-lbl">⭐ Note</div></div>
+      <div class="stat"><div class="stat-val" id="sw-reviews">0</div><div class="stat-lbl">Avis</div></div>
+      <div class="stat"><div class="stat-val">62</div><div class="stat-lbl">Jobs</div></div>
     </div>
-
-    <!-- Profile -->
-    <div class="profile-card">
-      <div class="profile-card-title">👤 Mon profil</div>
-      <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="pcard">
+      <div class="pcard-title">👤 Mon profil</div>
+      <div class="pcard-form">
         <div class="form-row">
-          <div>
-            <label>Nom</label>
-            <input type="text" id="w-name" placeholder="Votre nom" />
-          </div>
-          <div>
-            <label>Métier</label>
-            <select id="w-trade">
-              <option value="plombier">🔧 Plombier</option>
-              <option value="electricien">⚡ Électricien</option>
-              <option value="macon">🧱 Maçon</option>
-              <option value="peintre">🎨 Peintre</option>
-              <option value="menuisier">🪚 Menuisier</option>
-              <option value="serrurier">🔐 Serrurier</option>
-              <option value="couvreur">🏠 Couvreur</option>
-              <option value="carreleur">🪣 Carreleur</option>
-              <option value="soudeur">🔩 Soudeur</option>
-              <option value="cvc">❄️ CVC</option>
+          <div class="form-group"><label>Nom</label><input type="text" id="wp-name" /></div>
+          <div class="form-group"><label>Métier</label>
+            <select id="wp-trade">
+              <option value="plombier">🔧 Plombier</option><option value="electricien">⚡ Électricien</option>
+              <option value="macon">🧱 Maçon</option><option value="peintre">🎨 Peintre</option>
+              <option value="menuisier">🪚 Menuisier</option><option value="serrurier">🔐 Serrurier</option>
+              <option value="couvreur">🏠 Couvreur</option><option value="carreleur">🪣 Carreleur</option>
+              <option value="soudeur">🔩 Soudeur</option><option value="cvc">❄️ CVC</option>
             </select>
           </div>
         </div>
         <div class="form-row">
-          <div>
-            <label>Expérience (ans)</label>
-            <input type="number" id="w-exp" placeholder="5" />
-          </div>
-          <div>
-            <label>Tarif (DA/h)</label>
-            <input type="number" id="w-price" placeholder="2000" />
-          </div>
+          <div class="form-group"><label>Expérience (ans)</label><input type="number" id="wp-exp" /></div>
+          <div class="form-group"><label>Tarif (DA/h)</label><input type="number" id="wp-price" /></div>
         </div>
-        <div>
-          <label>Zone d'intervention (km)</label>
-          <input type="number" id="w-radius" placeholder="10" />
-        </div>
-        <div>
-          <label>Bio / Description</label>
-          <textarea id="w-bio" placeholder="Décrivez votre expérience, vos spécialités…"></textarea>
-        </div>
-        <button class="btn btn-primary" onclick="saveWorkerProfile()">💾 Enregistrer le profil</button>
+        <div class="form-group"><label>Zone d'intervention (km)</label><input type="number" id="wp-radius" /></div>
+        <div class="form-group"><label>Bio</label><textarea id="wp-bio" placeholder="Décrivez votre expérience…"></textarea></div>
+        <button class="btn btn-primary btn-full" onclick="saveProfile()">💾 Enregistrer</button>
       </div>
     </div>
-
-    <!-- Recent requests -->
-    <div class="profile-card">
-      <div class="profile-card-title">📋 Demandes récentes</div>
-      <div id="worker-requests">
-        <div class="request-item">
-          <div class="req-icon">👤</div>
-          <div class="req-info">
-            <div class="req-name">Ahmed Taleb</div>
-            <div class="req-time">Il y a 2 heures · Alger-Centre</div>
-          </div>
-          <span class="req-badge req-pending">En attente</span>
-        </div>
-        <div class="request-item">
-          <div class="req-icon">👤</div>
-          <div class="req-info">
-            <div class="req-name">Leila Mansouri</div>
-            <div class="req-time">Hier · El Biar</div>
-          </div>
-          <span class="req-badge req-done">Terminé</span>
-        </div>
-        <div class="request-item">
-          <div class="req-icon">👤</div>
-          <div class="req-info">
-            <div class="req-name">Omar Khaled</div>
-            <div class="req-time">Il y a 3 jours · Bab El Oued</div>
-          </div>
-          <span class="req-badge req-done">Terminé</span>
-        </div>
-      </div>
+    <div class="pcard">
+      <div class="pcard-title">📋 Demandes récentes</div>
+      <div class="req-item"><span style="font-size:20px">👤</span><div class="req-info"><div class="req-name">Ahmed Taleb</div><div class="req-time">Il y a 2h · Alger-Centre</div></div><span class="req-badge req-pending">En attente</span></div>
+      <div class="req-item"><span style="font-size:20px">👤</span><div class="req-info"><div class="req-name">Leila Mansouri</div><div class="req-time">Hier · El Biar</div></div><span class="req-badge req-done">Terminé</span></div>
+      <div class="req-item"><span style="font-size:20px">👤</span><div class="req-info"><div class="req-name">Omar Khaled</div><div class="req-time">Il y a 3j · Bab El Oued</div></div><span class="req-badge req-done">Terminé</span></div>
     </div>
-
-    <!-- Earnings -->
-    <div class="profile-card" style="text-align:center">
-      <div class="profile-card-title" style="justify-content:center">💰 Gains ce mois</div>
-      <div style="font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--orange);margin:8px 0">
-        62 400 <span style="font-size:20px;color:var(--text2)">DA</span>
-      </div>
+    <div class="pcard" style="text-align:center">
+      <div class="pcard-title">💰 Gains ce mois</div>
+      <div style="font-family:'Syne',sans-serif;font-size:38px;font-weight:800;color:var(--orange);margin:8px 0">62 400 <span style="font-size:18px;color:var(--text2)">DA</span></div>
       <p style="font-size:13px;color:var(--text2)">Basé sur vos jobs terminés</p>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     MODAL: WORKER PROFILE
-════════════════════════════════════════════════════════ -->
-<div id="worker-modal" class="modal-overlay hidden" onclick="closeModalIfOutside(event)">
-  <div class="modal" style="position:relative">
+<!-- ══════════ MODAL ══════════ -->
+<div id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal-box">
     <div class="modal-handle"></div>
-    <button class="modal-close" onclick="closeModal()">✕</button>
-
-    <div class="modal-worker-header">
-      <div class="modal-worker-photo" id="modal-photo"></div>
+    <button class="modal-close-btn" onclick="closeModal()">✕</button>
+    <div class="modal-header">
+      <div class="modal-photo" id="m-photo"></div>
       <div>
-        <div class="modal-worker-name" id="modal-name"></div>
-        <div class="modal-worker-trade" id="modal-trade"></div>
-        <div class="modal-worker-rating" id="modal-rating"></div>
-        <div id="modal-status" style="margin-top:4px"></div>
+        <div class="modal-name" id="m-name"></div>
+        <div class="modal-trade" id="m-trade"></div>
+        <div class="modal-rtext" id="m-rating"></div>
+        <div id="m-status" style="margin-top:4px"></div>
       </div>
     </div>
-
-    <div class="modal-details">
-      <div class="detail-chip">
-        <div class="detail-chip-label">💼 Expérience</div>
-        <div class="detail-chip-value" id="modal-exp"></div>
-      </div>
-      <div class="detail-chip">
-        <div class="detail-chip-label">💰 Tarif</div>
-        <div class="detail-chip-value" id="modal-price"></div>
-      </div>
-      <div class="detail-chip">
-        <div class="detail-chip-label">📍 Distance</div>
-        <div class="detail-chip-value" id="modal-dist"></div>
-      </div>
-      <div class="detail-chip">
-        <div class="detail-chip-label">🗺️ Zone</div>
-        <div class="detail-chip-value" id="modal-zone"></div>
-      </div>
+    <div class="modal-chips">
+      <div class="chip"><div class="chip-lbl">💼 Expérience</div><div class="chip-val" id="m-exp"></div></div>
+      <div class="chip"><div class="chip-lbl">💰 Tarif</div><div class="chip-val" id="m-price"></div></div>
+      <div class="chip"><div class="chip-lbl">📍 Distance</div><div class="chip-val" id="m-dist"></div></div>
+      <div class="chip"><div class="chip-lbl">🗺️ Zone</div><div class="chip-val" id="m-zone"></div></div>
     </div>
-
-    <p class="modal-bio" id="modal-bio"></p>
-
-    <button class="btn btn-primary" style="width:100%" onclick="contactWorker()">
-      📞 Contacter cet artisan
-    </button>
-
-    <!-- Rating form -->
-    <div class="rating-form">
-      <div class="rating-form-title">⭐ Laisser un avis</div>
-      <div class="star-input" id="star-input">
-        <button class="star-btn" data-val="1" onclick="setStar(1)">☆</button>
-        <button class="star-btn" data-val="2" onclick="setStar(2)">☆</button>
-        <button class="star-btn" data-val="3" onclick="setStar(3)">☆</button>
-        <button class="star-btn" data-val="4" onclick="setStar(4)">☆</button>
-        <button class="star-btn" data-val="5" onclick="setStar(5)">☆</button>
+    <p class="modal-bio" id="m-bio"></p>
+    <button class="btn btn-primary btn-full" onclick="contactWorker()">📞 Contacter cet artisan</button>
+    <div class="review-form">
+      <div class="review-title">⭐ Laisser un avis</div>
+      <div class="star-row">
+        <button class="star-btn" onclick="setStar(1)">☆</button>
+        <button class="star-btn" onclick="setStar(2)">☆</button>
+        <button class="star-btn" onclick="setStar(3)">☆</button>
+        <button class="star-btn" onclick="setStar(4)">☆</button>
+        <button class="star-btn" onclick="setStar(5)">☆</button>
       </div>
-      <textarea id="review-comment" placeholder="Partagez votre expérience avec cet artisan…" style="margin-bottom:12px"></textarea>
-      <button class="btn btn-outline" style="width:100%" onclick="submitReview()">Envoyer mon avis</button>
+      <textarea id="review-text" placeholder="Partagez votre expérience…" style="margin-bottom:10px"></textarea>
+      <button class="btn btn-outline btn-full" onclick="submitReview()">Envoyer mon avis</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     SCRIPTS
-════════════════════════════════════════════════════════ -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ─── APP STATE ────────────────────────────────────────
-const APP = {
-  currentUser: null,    // { id, name, email, role }
-  selectedRole: 'client',
-  authTab: 'login',
-  map: null,
-  markers: [],
-  userMarker: null,
-  userLat: 36.7372,
-  userLng: 3.0865,
-  currentTrade: 'all',
-  selectedWorker: null,
-  selectedStar: 0,
-  workerOnline: false,
-};
+/* ══════════ STATE ══════════ */
+var S = { user:null, role:'client', map:null, markers:[], lat:36.7372, lng:3.0865, trade:'all', worker:null, star:0 };
 
-// ─── DEMO DATA ────────────────────────────────────────
-const DEMO_WORKERS = [
-  {
-    id: 'w1', name: 'Mohammed Aïssaoui', trade: 'plombier', tradeLabel: '🔧 Plombier',
-    experience: 12, pricePerHour: 2000, isOnline: true,
-    lat: 36.7520, lng: 3.0420, city: 'El Biar', serviceRadius: 15,
-    rating: 4.8, reviewCount: 127,
-    bio: 'Plombier professionnel avec 12 ans d'expérience. Spécialisé en installations sanitaires, fuites d'eau et dépannage urgent. Disponible 7j/7.',
-  },
-  {
-    id: 'w2', name: 'Karim Bensaid', trade: 'electricien', tradeLabel: '⚡ Électricien',
-    experience: 8, pricePerHour: 2500, isOnline: true,
-    lat: 36.7200, lng: 3.1100, city: 'Hussein Dey', serviceRadius: 20,
-    rating: 4.9, reviewCount: 89,
-    bio: 'Électricien certifié, spécialiste en installations résidentielles et commerciales. Dépannage rapide garanti.',
-  },
-  {
-    id: 'w3', name: 'Youcef Hamidou', trade: 'macon', tradeLabel: '🧱 Maçon',
-    experience: 20, pricePerHour: 1800, isOnline: false,
-    lat: 36.7600, lng: 3.0600, city: 'Bab Ezzouar', serviceRadius: 25,
-    rating: 4.6, reviewCount: 203,
-    bio: 'Maçon expérimenté en gros œuvre, rénovation et finition. Je réalise vos projets dans les délais.',
-  },
-  {
-    id: 'w4', name: 'Amine Khelifi', trade: 'peintre', tradeLabel: '🎨 Peintre',
-    experience: 6, pricePerHour: 1500, isOnline: true,
-    lat: 36.7300, lng: 3.0750, city: 'Alger-Centre', serviceRadius: 12,
-    rating: 4.7, reviewCount: 54,
-    bio: 'Peintre en bâtiment, enduits décoratifs, peinture intérieure et extérieure. Travail soigné et propre.',
-  },
-  {
-    id: 'w5', name: 'Sara Benali', trade: 'carreleur', tradeLabel: '🪣 Carreleur',
-    experience: 9, pricePerHour: 2200, isOnline: true,
-    lat: 36.7450, lng: 3.0950, city: 'Kouba', serviceRadius: 18,
-    rating: 5.0, reviewCount: 38,
-    bio: 'Carrelage et faïence, cuisine, salle de bain. Pose au millimètre. Artisane passionnée par le beau travail.',
-  },
-  {
-    id: 'w6', name: 'Nabil Ouali', trade: 'serrurier', tradeLabel: '🔐 Serrurier',
-    experience: 15, pricePerHour: 3000, isOnline: false,
-    lat: 36.7100, lng: 3.0500, city: 'Bir Mourad Raïs', serviceRadius: 30,
-    rating: 4.5, reviewCount: 176,
-    bio: 'Serrurier d'urgence disponible 24h/24. Ouverture de portes, installation de serrures haute sécurité.',
-  },
-  {
-    id: 'w7', name: 'Fatima Zahra Mekki', trade: 'cvc', tradeLabel: '❄️ Climatisation / CVC',
-    experience: 7, pricePerHour: 2800, isOnline: true,
-    lat: 36.7650, lng: 3.1200, city: 'Rouiba', serviceRadius: 22,
-    rating: 4.8, reviewCount: 61,
-    bio: 'Technicienne CVC spécialisée en installation, maintenance et dépannage de climatiseurs toutes marques.',
-  },
-  {
-    id: 'w8', name: 'Rachid Tlemçani', trade: 'menuisier', tradeLabel: '🪚 Menuisier',
-    experience: 18, pricePerHour: 2300, isOnline: true,
-    lat: 36.7380, lng: 3.0300, city: 'Hydra', serviceRadius: 20,
-    rating: 3.9, reviewCount: 92,
-    bio: 'Menuisier ébéniste, fabrication sur mesure, rénovation de meubles, pose de parquet et placards.',
-  },
+/* ══════════ DEMO WORKERS ══════════ */
+var WORKERS = [
+  {id:'w1',name:'Mohammed Aïssaoui',trade:'plombier',label:'🔧 Plombier',exp:12,price:2000,online:true,lat:36.752,lng:3.042,city:'El Biar',radius:15,rating:4.8,reviews:127,bio:"Plombier professionnel avec 12 ans d'expérience. Spécialisé en installations sanitaires et dépannage urgent. Disponible 7j/7."},
+  {id:'w2',name:'Karim Bensaid',trade:'electricien',label:'⚡ Électricien',exp:8,price:2500,online:true,lat:36.720,lng:3.110,city:'Hussein Dey',radius:20,rating:4.9,reviews:89,bio:"Électricien certifié, spécialiste en installations résidentielles et commerciales. Dépannage rapide garanti."},
+  {id:'w3',name:'Youcef Hamidou',trade:'macon',label:'🧱 Maçon',exp:20,price:1800,online:false,lat:36.760,lng:3.060,city:'Bab Ezzouar',radius:25,rating:4.6,reviews:203,bio:"Maçon expérimenté en gros œuvre, rénovation et finition. Je réalise vos projets dans les délais."},
+  {id:'w4',name:'Amine Khelifi',trade:'peintre',label:'🎨 Peintre',exp:6,price:1500,online:true,lat:36.730,lng:3.075,city:'Alger-Centre',radius:12,rating:4.7,reviews:54,bio:"Peintre en bâtiment, enduits décoratifs, peinture intérieure et extérieure. Travail soigné."},
+  {id:'w5',name:'Sara Benali',trade:'carreleur',label:'🪣 Carreleur',exp:9,price:2200,online:true,lat:36.745,lng:3.095,city:'Kouba',radius:18,rating:5.0,reviews:38,bio:"Carrelage et faïence, cuisine, salle de bain. Pose au millimètre. Artisane passionnée."},
+  {id:'w6',name:'Nabil Ouali',trade:'serrurier',label:'🔐 Serrurier',exp:15,price:3000,online:false,lat:36.710,lng:3.050,city:'Bir Mourad Raïs',radius:30,rating:4.5,reviews:176,bio:"Serrurier disponible 24h/24. Ouverture de portes, serrures haute sécurité."},
+  {id:'w7',name:'Fatima Zahra Mekki',trade:'cvc',label:'❄️ Climatisation',exp:7,price:2800,online:true,lat:36.765,lng:3.120,city:'Rouiba',radius:22,rating:4.8,reviews:61,bio:"Technicienne CVC spécialisée en installation et dépannage de climatiseurs toutes marques."},
+  {id:'w8',name:'Rachid Tlemçani',trade:'menuisier',label:'🪚 Menuisier',exp:18,price:2300,online:true,lat:36.738,lng:3.030,city:'Hydra',radius:20,rating:3.9,reviews:92,bio:"Menuisier ébéniste, fabrication sur mesure, rénovation de meubles, parquet et placards."}
 ];
 
-const TRADE_EMOJIS = {
-  plombier: '🔧', electricien: '⚡', macon: '🧱', peintre: '🎨',
-  menuisier: '🪚', serrurier: '🔐', couvreur: '🏠', carreleur: '🪣',
-  soudeur: '🔩', cvc: '❄️'
-};
+var EM = {plombier:'🔧',electricien:'⚡',macon:'🧱',peintre:'🎨',menuisier:'🪚',serrurier:'🔐',couvreur:'🏠',carreleur:'🪣',soudeur:'🔩',cvc:'❄️'};
 
-// ─── PAGES ────────────────────────────────────────────
-function showPage(pageId) {
-  document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
-  document.getElementById('page-' + pageId).classList.remove('hidden');
+/* ══════════ NAVIGATION ══════════ */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var el = document.getElementById('page-'+id);
+  if(el) el.classList.add('active');
+  window.scrollTo(0,0);
 }
 
-// ─── LANDING ──────────────────────────────────────────
-function startAsClient() {
-  APP.selectedRole = 'client';
-  selectRole('client');
-  switchAuthTabByName('register');
-  showPage('auth');
-}
-function startAsWorker() {
-  APP.selectedRole = 'worker';
-  selectRole('worker');
-  switchAuthTabByName('register');
+function goAuth(tab, role) {
+  if(role){ S.role=role; selectRole(role); }
+  switchTab(tab);
   showPage('auth');
 }
 
-// ─── AUTH TABS ────────────────────────────────────────
-function switchAuthTab(tab, el) {
-  APP.authTab = tab;
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('auth-login').classList.toggle('hidden', tab !== 'login');
-  document.getElementById('auth-register').classList.toggle('hidden', tab !== 'register');
-}
-function switchAuthTabByName(tab) {
-  const tabs = document.querySelectorAll('.auth-tab');
-  tabs.forEach(t => {
-    const isTarget = (tab === 'login' && t.textContent.includes('Connexion')) ||
-                     (tab === 'register' && t.textContent.includes('Inscription'));
-    if (isTarget) switchAuthTab(tab, t);
-  });
+/* ══════════ AUTH TABS ══════════ */
+function switchTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('form-login').style.display = tab==='login' ? 'flex' : 'none';
+  document.getElementById('form-register').style.display = tab==='register' ? 'flex' : 'none';
 }
 
 function selectRole(role) {
-  APP.selectedRole = role;
-  document.getElementById('role-client').classList.toggle('selected', role === 'client');
-  document.getElementById('role-worker').classList.toggle('selected', role === 'worker');
-  document.getElementById('worker-fields').classList.toggle('hidden', role !== 'worker');
+  S.role = role;
+  document.getElementById('role-client').classList.toggle('selected', role==='client');
+  document.getElementById('role-worker').classList.toggle('selected', role==='worker');
+  document.getElementById('worker-extra').style.display = role==='worker' ? 'flex' : 'none';
 }
 
-// ─── AUTH LOGIC (Demo — no Firebase) ──────────────────
+function fillDemo(type) {
+  switchTab('login');
+  document.getElementById('l-email').value = type==='client' ? 'demo@client.com' : 'demo@worker.com';
+  document.getElementById('l-pass').value = '123456';
+  toast('Infos remplies — cliquez Se connecter', 'success');
+}
+
+/* ══════════ LOGIN ══════════ */
 function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-password').value;
-
-  if (!email || !pass) { toast('Veuillez remplir tous les champs', 'error'); return; }
-
-  // Check demo accounts
-  const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
-  const user = stored.find(u => u.email === email && u.password === pass);
-
-  if (!user) { toast('Email ou mot de passe incorrect', 'error'); return; }
-
-  APP.currentUser = user;
-  localStorage.setItem('rigliha_session', JSON.stringify(user));
-  toast('Bienvenue ' + user.name + ' !', 'success');
-  goToDashboard(user);
+  var email = document.getElementById('l-email').value.trim();
+  var pass  = document.getElementById('l-pass').value;
+  if(!email||!pass){ toast('Remplissez tous les champs','error'); return; }
+  var users = getUsers();
+  var u = null;
+  for(var i=0;i<users.length;i++){ if(users[i].email===email && users[i].password===pass){ u=users[i]; break; } }
+  if(!u){ toast('Email ou mot de passe incorrect','error'); return; }
+  S.user = u;
+  localStorage.setItem('rigliha_session', JSON.stringify(u));
+  toast('Bienvenue '+u.name+' !','success');
+  setTimeout(function(){ toDash(u); }, 500);
 }
 
+/* ══════════ REGISTER ══════════ */
 function doRegister() {
-  const name = document.getElementById('reg-name').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const pass = document.getElementById('reg-password').value;
-  const role = APP.selectedRole;
-
-  if (!name || !email || !pass) { toast('Veuillez remplir tous les champs', 'error'); return; }
-  if (pass.length < 6) { toast('Mot de passe trop court (min. 6 caractères)', 'error'); return; }
-
-  const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
-  if (stored.find(u => u.email === email)) { toast('Cet email est déjà utilisé', 'error'); return; }
-
-  const newUser = {
-    id: 'u' + Date.now(), name, email, password: pass, role,
-  };
-
-  if (role === 'worker') {
-    const trade = document.getElementById('reg-trade').value;
-    const exp = document.getElementById('reg-experience').value;
-    const price = document.getElementById('reg-price').value;
-    if (!trade) { toast('Veuillez choisir votre métier', 'error'); return; }
-    newUser.trade = trade;
-    newUser.experience = parseInt(exp) || 1;
-    newUser.pricePerHour = parseInt(price) || 2000;
-    newUser.rating = 0; newUser.reviewCount = 0;
-    newUser.isOnline = false;
-    newUser.bio = '';
-    newUser.lat = 36.7372 + (Math.random()-0.5)*0.05;
-    newUser.lng = 3.0865 + (Math.random()-0.5)*0.05;
+  var name  = document.getElementById('r-name').value.trim();
+  var email = document.getElementById('r-email').value.trim();
+  var pass  = document.getElementById('r-pass').value;
+  if(!name||!email||!pass){ toast('Remplissez tous les champs','error'); return; }
+  if(pass.length<6){ toast('Mot de passe trop court (6 min.)','error'); return; }
+  var users = getUsers();
+  for(var i=0;i<users.length;i++){ if(users[i].email===email){ toast('Email déjà utilisé','error'); return; } }
+  var u = {id:'u'+Date.now(),name:name,email:email,password:pass,role:S.role};
+  if(S.role==='worker'){
+    var trade = document.getElementById('r-trade').value;
+    if(!trade){ toast('Choisissez votre métier','error'); return; }
+    u.trade=trade; u.exp=parseInt(document.getElementById('r-exp').value)||1;
+    u.price=parseInt(document.getElementById('r-price').value)||2000;
+    u.radius=15; u.rating=0; u.reviews=0; u.online=false; u.bio='';
+    u.lat=36.7372+(Math.random()-.5)*.04; u.lng=3.0865+(Math.random()-.5)*.04;
   }
-
-  stored.push(newUser);
-  localStorage.setItem('rigliha_users', JSON.stringify(stored));
-  APP.currentUser = newUser;
-  localStorage.setItem('rigliha_session', JSON.stringify(newUser));
-  toast('Compte créé avec succès !', 'success');
-  goToDashboard(newUser);
+  users.push(u);
+  localStorage.setItem('rigliha_users',JSON.stringify(users));
+  S.user=u; localStorage.setItem('rigliha_session',JSON.stringify(u));
+  toast('Compte créé avec succès !','success');
+  setTimeout(function(){ toDash(u); }, 500);
 }
 
-function goToDashboard(user) {
-  if (user.role === 'client') {
-    initClientDashboard(user);
-    showPage('client');
-  } else {
-    initWorkerDashboard(user);
-    showPage('worker');
-  }
-}
-
+/* ══════════ LOGOUT ══════════ */
 function doLogout() {
-  APP.currentUser = null;
-  localStorage.removeItem('rigliha_session');
-  if (APP.map) { APP.map.remove(); APP.map = null; }
-  showPage('landing');
-  toast('Déconnecté avec succès');
+  S.user=null; localStorage.removeItem('rigliha_session');
+  if(S.map){ try{S.map.remove();}catch(e){} S.map=null; }
+  showPage('landing'); toast('Déconnecté');
 }
 
-// ─── CLIENT DASHBOARD ─────────────────────────────────
-function initClientDashboard(user) {
-  document.getElementById('client-user-name').textContent = user.name.split(' ')[0];
-  document.getElementById('client-avatar-letter').textContent = user.name[0].toUpperCase();
+/* ══════════ DASHBOARD ROUTER ══════════ */
+function toDash(u) {
+  if(u.role==='client'){ initClient(u); showPage('client'); }
+  else{ initWorker(u); showPage('worker'); }
+}
 
-  getUserLocation().then(({ lat, lng }) => {
-    APP.userLat = lat; APP.userLng = lng;
-    initMap(lat, lng);
-    updateLocationText(lat, lng);
+/* ══════════ CLIENT ══════════ */
+function initClient(u) {
+  document.getElementById('c-name').textContent = u.name.split(' ')[0];
+  document.getElementById('c-avatar').textContent = u.name[0].toUpperCase();
+  getGPS(function(la,lo){
+    S.lat=la; S.lng=lo;
+    document.getElementById('c-loc').textContent = '📍 Alger, Algérie';
+    buildMap(la,lo);
   });
 }
 
-function getUserLocation() {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      resolve({ lat: 36.7372, lng: 3.0865 });
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => resolve({ lat: 36.7372, lng: 3.0865 }),
-      { timeout: 5000 }
-    );
-  });
+function getGPS(cb) {
+  if(!navigator.geolocation){ cb(36.7372,3.0865); return; }
+  navigator.geolocation.getCurrentPosition(
+    function(p){ cb(p.coords.latitude,p.coords.longitude); },
+    function(){ cb(36.7372,3.0865); },
+    {timeout:5000}
+  );
 }
 
-function updateLocationText(lat, lng) {
-  // Reverse geocode approximation based on coords near Algiers
-  const neighborhoods = [
-    { name: 'Alger-Centre', lat: 36.7538, lng: 3.0588 },
-    { name: 'El Biar', lat: 36.7639, lng: 3.0278 },
-    { name: 'Hydra', lat: 36.7383, lng: 3.0227 },
-    { name: 'Kouba', lat: 36.7197, lng: 3.0936 },
-    { name: 'Hussein Dey', lat: 36.7376, lng: 3.1036 },
-    { name: 'Bab El Oued', lat: 36.7801, lng: 3.0565 },
-  ];
-  let closest = 'Alger', minD = Infinity;
-  neighborhoods.forEach(n => {
-    const d = Math.abs(n.lat - lat) + Math.abs(n.lng - lng);
-    if (d < minD) { minD = d; closest = n.name; }
+/* ══════════ MAP ══════════ */
+function buildMap(la,lo) {
+  if(S.map){ try{S.map.remove();}catch(e){} }
+  S.map = L.map('map',{zoomControl:true,attributionControl:false}).setView([la,lo],13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(S.map);
+  var uIcon = L.divIcon({
+    className:'',
+    html:'<div style="width:16px;height:16px;border-radius:50%;background:#f5a623;box-shadow:0 0 0 4px rgba(245,166,35,.3)"></div>',
+    iconSize:[16,16],iconAnchor:[8,8]
   });
-  document.getElementById('client-location-text').textContent = '📍 ' + closest + ', Algérie';
-}
-
-// ─── MAP ──────────────────────────────────────────────
-function initMap(lat, lng) {
-  if (APP.map) APP.map.remove();
-
-  APP.map = L.map('map', { zoomControl: true, attributionControl: false }).setView([lat, lng], 13);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-  }).addTo(APP.map);
-
-  // User marker (orange pulsing)
-  const userIcon = L.divIcon({
-    className: '',
-    html: '<div class="pulse-ring" style="width:16px;height:16px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 0 rgba(245,166,35,0.5);animation:pulse-anim 1.8s infinite;"></div>',
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
-  });
-
-  APP.userMarker = L.marker([lat, lng], { icon: userIcon })
-    .addTo(APP.map)
-    .bindPopup('<strong>📍 Votre position</strong>');
-
-  document.getElementById('map-loading').classList.add('hidden');
-
+  L.marker([la,lo],{icon:uIcon}).addTo(S.map).bindPopup('<strong>📍 Votre position</strong>');
+  document.getElementById('map-loader').style.display='none';
   renderWorkers();
 }
 
-function getFilteredWorkers() {
-  let workers = [...DEMO_WORKERS];
-  if (APP.currentTrade !== 'all') {
-    workers = workers.filter(w => w.trade === APP.currentTrade);
-  }
-  return workers;
-}
-
-function calcDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+function calcDist(la1,lo1,la2,lo2) {
+  var R=6371,d1=(la2-la1)*Math.PI/180,d2=(lo2-lo1)*Math.PI/180;
+  var a=Math.sin(d1/2)*Math.sin(d1/2)+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(d2/2)*Math.sin(d2/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
 function renderWorkers() {
-  // Clear old markers (not user marker)
-  APP.markers.forEach(m => m.remove());
-  APP.markers = [];
+  S.markers.forEach(function(m){ try{m.remove();}catch(e){} });
+  S.markers=[];
+  var list = [];
+  for(var i=0;i<WORKERS.length;i++){
+    var w=WORKERS[i];
+    if(S.trade==='all'||w.trade===S.trade){
+      var wc = JSON.parse(JSON.stringify(w));
+      wc.d = calcDist(S.lat,S.lng,w.lat,w.lng);
+      list.push(wc);
+    }
+  }
+  list.sort(function(a,b){ return a.d-b.d; });
 
-  const workers = getFilteredWorkers().map(w => ({
-    ...w, dist: calcDistance(APP.userLat, APP.userLng, w.lat, w.lng)
-  })).sort((a,b) => a.dist - b.dist);
-
-  // Add map pins
-  workers.forEach(w => {
-    const color = w.isOnline ? '#22c55e' : '#6b7280';
-    const icon = L.divIcon({
-      className: '',
-      html: `<div style="
-        width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
-        background:${color};border:2px solid rgba(0,0,0,0.3);
-        display:flex;align-items:center;justify-content:center;
-        box-shadow:0 3px 10px rgba(0,0,0,0.4);">
-        <span style="transform:rotate(45deg);font-size:14px">${TRADE_EMOJIS[w.trade]||'🔧'}</span>
-      </div>`,
-      iconSize: [36, 36],
-      iconAnchor: [18, 36],
+  if(S.map){
+    list.forEach(function(w){
+      var col = w.online ? '#22c55e' : '#6b7280';
+      var icon = L.divIcon({
+        className:'',
+        html:'<div style="width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:'+col+';border:2px solid rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.4)"><span style="transform:rotate(45deg);font-size:14px">'+(EM[w.trade]||'🔧')+'</span></div>',
+        iconSize:[36,36],iconAnchor:[18,36]
+      });
+      var html='<div style="font-family:\'DM Sans\',sans-serif;min-width:165px">'+
+        '<strong style="font-size:14px">'+w.name+'</strong>'+
+        '<div style="font-size:12px;color:#9ca3af;margin:3px 0">'+w.label+'</div>'+
+        '<div style="font-size:12px;color:#f5a623">'+renderStars(w.rating)+' '+w.rating+' · '+w.reviews+' avis</div>'+
+        '<div style="font-size:12px;color:#9ca3af;margin:3px 0">'+w.d.toFixed(1)+' km · '+w.price.toLocaleString()+' DA/h</div>'+
+        '<button onclick="openModal(\''+w.id+'\')" style="margin-top:8px;width:100%;padding:7px;background:linear-gradient(135deg,#f5a623,#e8431a);border:none;border-radius:6px;color:#fff;font-weight:600;font-size:13px;cursor:pointer">Voir profil</button>'+
+        '</div>';
+      var m = L.marker([w.lat,w.lng],{icon:icon}).addTo(S.map).bindPopup(L.popup().setContent(html));
+      S.markers.push(m);
     });
-
-    const starsHtml = renderStars(w.rating);
-    const popup = L.popup({ className: 'rigliha-popup' }).setContent(`
-      <div style="font-family:'DM Sans',sans-serif;padding:4px;min-width:180px">
-        <strong style="font-family:'Syne',sans-serif;font-size:15px">${w.name}</strong>
-        <div style="font-size:13px;color:#9ca3af;margin:4px 0">${w.tradeLabel}</div>
-        <div style="font-size:13px;color:#f5a623">${starsHtml} ${w.rating} · ${w.reviewCount} avis</div>
-        <div style="font-size:12px;color:#9ca3af;margin:4px 0">${w.dist.toFixed(1)} km · ${w.pricePerHour.toLocaleString()} DA/h</div>
-        <button onclick="openWorkerModal('${w.id}')" style="
-          margin-top:8px;width:100%;padding:7px;
-          background:linear-gradient(135deg,#f5a623,#e8431a);
-          border:none;border-radius:6px;color:#fff;
-          font-weight:600;font-size:13px;cursor:pointer">
-          Voir profil
-        </button>
-      </div>
-    `);
-
-    const marker = L.marker([w.lat, w.lng], { icon }).addTo(APP.map).bindPopup(popup);
-    APP.markers.push(marker);
-  });
-
-  // Render list
-  const list = document.getElementById('workers-list');
-  const count = document.getElementById('workers-count');
-
-  if (workers.length === 0) {
-    count.textContent = '';
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p>Aucun artisan trouvé pour ce métier</p></div>`;
-    return;
   }
 
-  count.textContent = '(' + workers.length + ')';
-  list.innerHTML = workers.map(w => `
-    <div class="worker-card" onclick="openWorkerModal('${w.id}')">
-      <div class="worker-photo">${TRADE_EMOJIS[w.trade]||'🔧'}</div>
-      <div class="worker-info">
-        <div class="worker-name">${w.name}</div>
-        <div class="worker-trade">${w.tradeLabel}</div>
-        <div class="worker-meta">
-          <span class="worker-rating">${renderStars(w.rating)} ${w.rating}</span>
-          <span class="worker-dist">· ${w.reviewCount} avis</span>
-          <span class="worker-dist">· ${w.dist.toFixed(1)} km</span>
-        </div>
-        <div class="worker-price">${w.pricePerHour.toLocaleString()} DA/h · ${w.city}</div>
-      </div>
-      <div class="worker-contact-btn">
-        <span class="${w.isOnline ? 'badge badge-online' : 'badge badge-offline'}">
-          ${w.isOnline ? '● Dispo' : '● Indispo'}
-        </span>
-      </div>
-    </div>
-  `).join('');
+  document.getElementById('w-count').textContent = '('+list.length+')';
+  var el = document.getElementById('workers-list');
+  if(!list.length){
+    el.innerHTML='<div class="empty"><span class="empty-icon">🔍</span><p>Aucun artisan pour ce métier</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(function(w){
+    return '<div class="wcard" onclick="openModal(\''+w.id+'\')">'+
+      '<div class="wcard-photo">'+(EM[w.trade]||'🔧')+'</div>'+
+      '<div class="wcard-info">'+
+        '<div class="wcard-name">'+w.name+'</div>'+
+        '<div class="wcard-trade">'+w.label+'</div>'+
+        '<div class="wcard-meta">'+
+          '<span class="wcard-rating">'+renderStars(w.rating)+' '+w.rating+'</span>'+
+          '<span class="wcard-detail">· '+w.reviews+' avis</span>'+
+          '<span class="wcard-detail">· '+w.d.toFixed(1)+' km</span>'+
+        '</div>'+
+        '<div class="wcard-detail" style="margin-top:3px">'+w.price.toLocaleString()+' DA/h · '+w.city+'</div>'+
+      '</div>'+
+      '<span class="badge '+(w.online?'badge-on':'badge-off')+'">'+(w.online?'● Dispo':'● Indispo')+'</span>'+
+    '</div>';
+  }).join('');
 }
 
 function filterTrade(trade, el) {
-  APP.currentTrade = trade;
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  S.trade=trade;
+  document.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('active'); });
   el.classList.add('active');
   renderWorkers();
 }
 
-function renderStars(rating) {
-  const full = Math.floor(rating);
-  const half = rating - full >= 0.5;
-  let s = '';
-  for (let i = 0; i < full; i++) s += '★';
-  if (half) s += '½';
-  for (let i = full + (half?1:0); i < 5; i++) s += '☆';
+function renderStars(r) {
+  var s='', f=Math.floor(r);
+  for(var i=0;i<f;i++) s+='★';
+  for(var i=f;i<5;i++) s+='☆';
   return s;
 }
 
-// ─── WORKER MODAL ─────────────────────────────────────
-function openWorkerModal(workerId) {
-  const w = DEMO_WORKERS.find(w => w.id === workerId);
-  if (!w) return;
-  APP.selectedWorker = w;
-  APP.selectedStar = 0;
-
-  const dist = calcDistance(APP.userLat, APP.userLng, w.lat, w.lng);
-
-  document.getElementById('modal-photo').textContent = TRADE_EMOJIS[w.trade] || '🔧';
-  document.getElementById('modal-name').textContent = w.name;
-  document.getElementById('modal-trade').textContent = w.tradeLabel;
-  document.getElementById('modal-rating').textContent = renderStars(w.rating) + ' ' + w.rating + ' · ' + w.reviewCount + ' avis';
-  document.getElementById('modal-status').innerHTML = w.isOnline
-    ? '<span class="badge badge-online">● En ligne</span>'
-    : '<span class="badge badge-offline">● Hors ligne</span>';
-  document.getElementById('modal-exp').textContent = w.experience + ' ans';
-  document.getElementById('modal-price').textContent = w.pricePerHour.toLocaleString() + ' DA/h';
-  document.getElementById('modal-dist').textContent = dist.toFixed(1) + ' km';
-  document.getElementById('modal-zone').textContent = w.serviceRadius + ' km';
-  document.getElementById('modal-bio').textContent = w.bio;
-
-  // Reset stars
+/* ══════════ MODAL ══════════ */
+function openModal(id) {
+  var w=null;
+  for(var i=0;i<WORKERS.length;i++){ if(WORKERS[i].id===id){ w=WORKERS[i]; break; } }
+  if(!w) return;
+  S.worker=w; S.star=0;
+  var d=calcDist(S.lat,S.lng,w.lat,w.lng);
+  document.getElementById('m-photo').textContent = EM[w.trade]||'🔧';
+  document.getElementById('m-name').textContent = w.name;
+  document.getElementById('m-trade').textContent = w.label;
+  document.getElementById('m-rating').textContent = renderStars(w.rating)+' '+w.rating+' · '+w.reviews+' avis';
+  document.getElementById('m-status').innerHTML = w.online
+    ? '<span class="badge badge-on">● En ligne</span>'
+    : '<span class="badge badge-off">● Hors ligne</span>';
+  document.getElementById('m-exp').textContent = w.exp+' ans';
+  document.getElementById('m-price').textContent = w.price.toLocaleString()+' DA/h';
+  document.getElementById('m-dist').textContent = d.toFixed(1)+' km';
+  document.getElementById('m-zone').textContent = w.radius+' km';
+  document.getElementById('m-bio').textContent = w.bio||'';
   setStar(0);
-  document.getElementById('review-comment').value = '';
-
-  document.getElementById('worker-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
+  document.getElementById('review-text').value='';
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
 }
 
 function closeModal() {
-  document.getElementById('worker-modal').classList.add('hidden');
-  document.body.style.overflow = '';
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow='';
 }
 
-function closeModalIfOutside(e) {
-  if (e.target === document.getElementById('worker-modal')) closeModal();
+function handleOverlayClick(e) {
+  if(e.target===document.getElementById('modal-overlay')) closeModal();
 }
 
 function contactWorker() {
-  if (!APP.selectedWorker) return;
-  const w = APP.selectedWorker;
-  toast('📞 Demande envoyée à ' + w.name + ' !', 'success');
+  if(!S.worker) return;
+  toast('📞 Demande envoyée à '+S.worker.name+' !','success');
 }
 
-// ─── RATING ───────────────────────────────────────────
+/* ══════════ STARS ══════════ */
 function setStar(n) {
-  APP.selectedStar = n;
-  document.querySelectorAll('.star-btn').forEach((btn, i) => {
-    const isFilled = i < n;
-    btn.textContent = isFilled ? '★' : '☆';
-    btn.classList.toggle('active', isFilled);
-  });
+  S.star=n;
+  var btns=document.querySelectorAll('.star-btn');
+  for(var i=0;i<btns.length;i++){
+    btns[i].textContent = i<n ? '★' : '☆';
+    btns[i].classList.toggle('lit', i<n);
+  }
 }
 
 function submitReview() {
-  if (!APP.selectedStar) { toast('Veuillez choisir une note', 'error'); return; }
-  const comment = document.getElementById('review-comment').value.trim();
-  const w = APP.selectedWorker;
-  if (!w) return;
-
-  // Update demo data
-  const newCount = w.reviewCount + 1;
-  const newRating = Math.round(((w.rating * w.reviewCount + APP.selectedStar) / newCount) * 10) / 10;
-  w.reviewCount = newCount;
-  w.rating = newRating;
-
-  toast('Merci pour votre avis ! (' + APP.selectedStar + '★)', 'success');
-  setStar(0);
-  document.getElementById('review-comment').value = '';
-  closeModal();
-  renderWorkers();
+  if(!S.star){ toast('Choisissez une note','error'); return; }
+  var w=S.worker;
+  var nc=w.reviews+1;
+  w.rating=Math.round(((w.rating*w.reviews+S.star)/nc)*10)/10;
+  w.reviews=nc;
+  toast('Merci pour votre avis ('+S.star+'★) !','success');
+  setStar(0); document.getElementById('review-text').value='';
+  closeModal(); renderWorkers();
 }
 
-// ─── WORKER DASHBOARD ─────────────────────────────────
-function initWorkerDashboard(user) {
-  document.getElementById('worker-user-name').textContent = user.name.split(' ')[0];
-  document.getElementById('worker-avatar-letter').textContent = user.name[0].toUpperCase();
-
-  document.getElementById('w-name').value = user.name || '';
-  document.getElementById('w-trade').value = user.trade || 'plombier';
-  document.getElementById('w-exp').value = user.experience || '';
-  document.getElementById('w-price').value = user.pricePerHour || '';
-  document.getElementById('w-bio').value = user.bio || '';
-  document.getElementById('w-radius').value = user.serviceRadius || 15;
-
-  const isOnline = user.isOnline || false;
-  document.getElementById('online-toggle').checked = isOnline;
-  updateToggleUI(isOnline);
-
-  document.getElementById('w-rating').textContent = user.rating > 0 ? user.rating.toFixed(1) : '—';
-  document.getElementById('w-reviews').textContent = user.reviewCount || 0;
+/* ══════════ WORKER DASHBOARD ══════════ */
+function initWorker(u) {
+  document.getElementById('w-name-chip').textContent = u.name.split(' ')[0];
+  document.getElementById('w-avatar').textContent = u.name[0].toUpperCase();
+  document.getElementById('wp-name').value  = u.name||'';
+  document.getElementById('wp-trade').value = u.trade||'plombier';
+  document.getElementById('wp-exp').value   = u.exp||'';
+  document.getElementById('wp-price').value = u.price||'';
+  document.getElementById('wp-radius').value= u.radius||15;
+  document.getElementById('wp-bio').value   = u.bio||'';
+  document.getElementById('sw-rating').textContent  = u.rating>0 ? u.rating.toFixed(1) : '—';
+  document.getElementById('sw-reviews').textContent = u.reviews||0;
+  var on=u.online||false;
+  document.getElementById('online-chk').checked=on;
+  setToggleUI(on);
 }
 
-function toggleOnlineStatus() {
-  const isOnline = document.getElementById('online-toggle').checked;
-  APP.workerOnline = isOnline;
-  updateToggleUI(isOnline);
-
-  if (APP.currentUser) {
-    const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
-    const idx = stored.findIndex(u => u.id === APP.currentUser.id);
-    if (idx >= 0) { stored[idx].isOnline = isOnline; localStorage.setItem('rigliha_users', JSON.stringify(stored)); }
-    APP.currentUser.isOnline = isOnline;
-    localStorage.setItem('rigliha_session', JSON.stringify(APP.currentUser));
-  }
-  toast(isOnline ? '🟢 Vous êtes maintenant EN LIGNE' : '⚫ Vous êtes HORS LIGNE', isOnline ? 'success' : '');
-}
-
-function updateToggleUI(isOnline) {
-  const card = document.getElementById('toggle-card');
-  const label = document.getElementById('toggle-label');
-  const sub = document.getElementById('toggle-sub');
-  card.classList.toggle('online', isOnline);
-  label.textContent = isOnline ? 'EN LIGNE' : 'HORS LIGNE';
-  label.style.color = isOnline ? 'var(--green)' : 'var(--text)';
-  sub.textContent = isOnline
-    ? 'Les clients peuvent vous voir sur la carte 🗺️'
-    : 'Activez pour être visible par les clients';
-}
-
-function saveWorkerProfile() {
-  if (!APP.currentUser) return;
-  const updates = {
-    name: document.getElementById('w-name').value,
-    trade: document.getElementById('w-trade').value,
-    experience: parseInt(document.getElementById('w-exp').value) || 1,
-    pricePerHour: parseInt(document.getElementById('w-price').value) || 2000,
-    serviceRadius: parseInt(document.getElementById('w-radius').value) || 15,
-    bio: document.getElementById('w-bio').value,
-  };
-
-  Object.assign(APP.currentUser, updates);
-  localStorage.setItem('rigliha_session', JSON.stringify(APP.currentUser));
-  const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
-  const idx = stored.findIndex(u => u.id === APP.currentUser.id);
-  if (idx >= 0) { Object.assign(stored[idx], updates); localStorage.setItem('rigliha_users', JSON.stringify(stored)); }
-
-  toast('Profil mis à jour avec succès ✓', 'success');
-}
-
-// ─── TOAST ────────────────────────────────────────────
-function toast(msg, type = '') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'show' + (type ? ' ' + type : '');
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => { el.className = ''; }, 3000);
-}
-
-// ─── INIT ─────────────────────────────────────────────
-(function init() {
-  // Restore session
-  const session = localStorage.getItem('rigliha_session');
-  if (session) {
-    try {
-      const user = JSON.parse(session);
-      APP.currentUser = user;
-      goToDashboard(user);
-    } catch(e) {
-      showPage('landing');
+function toggleOnline() {
+  var on=document.getElementById('online-chk').checked;
+  setToggleUI(on);
+  if(S.user){
+    S.user.online=on;
+    localStorage.setItem('rigliha_session',JSON.stringify(S.user));
+    var users=getUsers();
+    for(var i=0;i<users.length;i++){
+      if(users[i].id===S.user.id){ users[i].online=on; break; }
     }
-  } else {
-    showPage('landing');
+    localStorage.setItem('rigliha_users',JSON.stringify(users));
   }
+  toast(on?'🟢 Vous êtes EN LIGNE':'⚫ Vous êtes HORS LIGNE', on?'success':'');
+}
 
-  // Add demo worker accounts to localStorage if not present
-  const stored = JSON.parse(localStorage.getItem('rigliha_users') || '[]');
-  const hasDemo = stored.find(u => u.email === 'demo@worker.com');
-  if (!hasDemo) {
-    stored.push({
-      id: 'demo-worker', name: 'Mohammed Aïssaoui', email: 'demo@worker.com',
-      password: '123456', role: 'worker', trade: 'plombier',
-      experience: 12, pricePerHour: 2000, rating: 4.8, reviewCount: 127,
-      isOnline: false, bio: 'Plombier expérimenté, disponible 7j/7.',
-      serviceRadius: 15,
-    });
-    stored.push({
-      id: 'demo-client', name: 'Ahmed Taleb', email: 'demo@client.com',
-      password: '123456', role: 'client',
-    });
-    localStorage.setItem('rigliha_users', JSON.stringify(stored));
+function setToggleUI(on) {
+  document.getElementById('toggle-card').classList.toggle('online',on);
+  var t=document.getElementById('toggle-title');
+  t.textContent=on?'EN LIGNE':'HORS LIGNE';
+  t.style.color=on?'var(--green)':'var(--text)';
+  document.getElementById('toggle-sub').textContent=on?'Les clients peuvent vous voir sur la carte 🗺️':'Activez pour être visible par les clients';
+}
+
+function saveProfile() {
+  if(!S.user) return;
+  var up={
+    name:document.getElementById('wp-name').value,
+    trade:document.getElementById('wp-trade').value,
+    exp:parseInt(document.getElementById('wp-exp').value)||1,
+    price:parseInt(document.getElementById('wp-price').value)||2000,
+    radius:parseInt(document.getElementById('wp-radius').value)||15,
+    bio:document.getElementById('wp-bio').value
+  };
+  for(var k in up) S.user[k]=up[k];
+  localStorage.setItem('rigliha_session',JSON.stringify(S.user));
+  var users=getUsers();
+  for(var i=0;i<users.length;i++){ if(users[i].id===S.user.id){ for(var k in up) users[i][k]=up[k]; break; } }
+  localStorage.setItem('rigliha_users',JSON.stringify(users));
+  toast('Profil enregistré ✓','success');
+}
+
+/* ══════════ UTILS ══════════ */
+function getUsers() {
+  try{ return JSON.parse(localStorage.getItem('rigliha_users')||'[]'); }catch(e){ return []; }
+}
+
+function toast(msg,type) {
+  var el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className=type?'show '+type:'show';
+  clearTimeout(el._t);
+  el._t=setTimeout(function(){ el.className=''; },3000);
+}
+
+/* ══════════ BOOT ══════════ */
+(function(){
+  // Seed demo accounts
+  var users=getUsers();
+  var hasDemo=false;
+  for(var i=0;i<users.length;i++){ if(users[i].email==='demo@client.com'){ hasDemo=true; break; } }
+  if(!hasDemo){
+    users.push({id:'demo-c',name:'Ahmed Taleb',email:'demo@client.com',password:'123456',role:'client'});
+    users.push({id:'demo-w',name:'Mohammed Aïssaoui',email:'demo@worker.com',password:'123456',role:'worker',trade:'plombier',exp:12,price:2000,radius:15,rating:4.8,reviews:127,online:false,bio:"Plombier expérimenté, disponible 7j/7.",lat:36.752,lng:3.042});
+    localStorage.setItem('rigliha_users',JSON.stringify(users));
   }
+  // Restore session
+  try{
+    var s=localStorage.getItem('rigliha_session');
+    if(s){ var u=JSON.parse(s); S.user=u; toDash(u); return; }
+  }catch(e){}
+  showPage('landing');
 })();
 </script>
 </body>
